@@ -168,6 +168,7 @@ export const FloorPlanCanvas: React.FC = () => {
   // Vertex Drag Handle Start
   const handleMouseDownVertex = (e: React.MouseEvent, fixtureId: string, index: number, v: { x: number; y: number }) => {
     e.stopPropagation();
+    e.preventDefault();
     setDraggingVertex({ fixtureId, index });
     setDragStartMouse({ x: e.clientX, y: e.clientY });
     setDragStartVertexPos({ x: v.x, y: v.y });
@@ -614,20 +615,38 @@ export const FloorPlanCanvas: React.FC = () => {
 
           {/* Interactive Vertex Corner Handles & Controls */}
           {isSelected && (
-            <g>
-              {/* Corner Vertex Grab Points (Remodeling Handles) */}
+            <g className="select-none">
+              {/* Corner Vertex Grab Points (Stable, large hit-targets with zero CSS jitter) */}
               {verts.map((v: { x: number; y: number }, idx: number) => (
-                <circle
+                <g
                   key={idx}
-                  cx={v.x * SCALE}
-                  cy={v.y * SCALE}
-                  r={6}
-                  fill="#c99a6e"
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                  className="cursor-crosshair hover:scale-150 transition-transform pointer-events-auto"
+                  className="cursor-crosshair pointer-events-auto"
                   onMouseDown={(e) => handleMouseDownVertex(e, fix.id, idx, v)}
-                />
+                >
+                  {/* Invisible generous hit target (prevents accidental body drag) */}
+                  <circle
+                    cx={v.x * SCALE}
+                    cy={v.y * SCALE}
+                    r={14}
+                    fill="transparent"
+                  />
+                  {/* Outer border ring */}
+                  <circle
+                    cx={v.x * SCALE}
+                    cy={v.y * SCALE}
+                    r={7}
+                    fill="#c99a6e"
+                    stroke="#ffffff"
+                    strokeWidth={2.5}
+                  />
+                  {/* Inner center dot */}
+                  <circle
+                    cx={v.x * SCALE}
+                    cy={v.y * SCALE}
+                    r={2.5}
+                    fill="#3d2c1d"
+                  />
+                </g>
               ))}
 
               {/* Floating Quick Action Pill */}
