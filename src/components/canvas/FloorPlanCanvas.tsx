@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useFloorPlanStore } from '../../store/floorplanStore';
 import { Room, Opening, Fixture } from '../../types/floorplan';
 import { snapToGrid, snapToAdjacentRooms, formatDimension } from '../../utils/geometry';
+import { getDefaultVerticesForGeometry } from '../../utils/defaultPresets';
 
 const SCALE = 60; // 1 meter = 60 pixels at zoom 1.0
 
@@ -21,10 +22,11 @@ export const FloorPlanCanvas: React.FC = () => {
     resizeOpening,
     flipOpeningSwing,
     moveFixture,
-    resizeFixture,
     rotateFixture,
     cloneFixture,
     deleteFixture,
+    updateFixtureVertex,
+    addFixtureVertex,
     deleteOpening,
     rotateRoom,
     cloneRoom,
@@ -61,12 +63,13 @@ export const FloorPlanCanvas: React.FC = () => {
     height: 0,
   });
 
-  // Fixture Drag & Resize
+  // Fixture Drag
   const [draggingFixtureId, setDraggingFixtureId] = useState<string | null>(null);
   const [dragStartFixturePos, setDragStartFixturePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const [resizingFixtureId, setResizingFixtureId] = useState<string | null>(null);
-  const [resizeFixtureStart, setResizeFixtureStart] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  // Vertex Drag Remodeling
+  const [draggingVertex, setDraggingVertex] = useState<{ fixtureId: string; index: number } | null>(null);
+  const [dragStartVertexPos, setDragStartVertexPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Opening (Door/Window) Drag & Resize
   const [draggingOpeningId, setDraggingOpeningId] = useState<string | null>(null);
@@ -162,12 +165,12 @@ export const FloorPlanCanvas: React.FC = () => {
     setDragStartFixturePos({ x: fix.x, y: fix.y });
   };
 
-  // Fixture Resize Handle Start
-  const handleMouseDownFixtureResize = (e: React.MouseEvent, fix: Fixture) => {
+  // Vertex Drag Handle Start
+  const handleMouseDownVertex = (e: React.MouseEvent, fixtureId: string, index: number, v: { x: number; y: number }) => {
     e.stopPropagation();
-    setResizingFixtureId(fix.id);
+    setDraggingVertex({ fixtureId, index });
     setDragStartMouse({ x: e.clientX, y: e.clientY });
-    setResizeFixtureStart({ width: fix.width, height: fix.height });
+    setDragStartVertexPos({ x: v.x, y: v.y });
   };
 
   // Opening Drag Start (Sliding along wall)
@@ -215,27 +218,20 @@ export const FloorPlanCanvas: React.FC = () => {
       return;
     }
 
-    // 3. Resize Fixture Width & Height (Correctly projected with rotation)
-    if (resizingFixtureId) {
-      const fix = fixtures.find((f) => f.id === resizingFixtureId);
-      if (fix) {
-        const dx = (e.clientX - dragStartMouse.x) / (SCALE * zoom);
-        const dy = (e.clientY - dragStartMouse.y) / (SCALE * zoom);
+    // 2b. Drag Polygon Vertex Point (Remodeling)
+    if (draggingVertex) {
+      const dx = (e.clientX - dragStartMouse.x) / (SCALE * zoom);
+      const dy = (e.clientY - dragStartMouse.y) / (SCALE * zoom);
 
-        const rad = (-fix.rotation * Math.PI) / 180;
-        const localDx = dx * Math.cos(rad) - dy * Math.sin(rad);
-        const localDy = dx * Math.sin(rad) + dy * Math.cos(rad);
+      let targetVx = dragStartVertexPos.x + dx;
+      let targetVy = dragStartVertexPos.y + dy;
 
-        let newW = Math.max(0.4, resizeFixtureStart.width + localDx);
-        let newH = Math.max(0.4, resizeFixtureStart.height + localDy);
-
-        if (gridSnap) {
-          newW = snapToGrid(newW, gridSnapSize);
-          newH = snapToGrid(newH, gridSnapSize);
-        }
-
-        resizeFixture(resizingFixtureId, newW, newH);
+      if (gridSnap) {
+        targetVx = snapToGrid(targetVx, 0.05);
+        targetVy = snapToGrid(targetVy, 0.05);
       }
+
+      updateFixtureVertex(draggingVertex.fixtureId, draggingVertex.index, Math.max(0, targetVx), Math.max(0, targetVy));
       return;
     }
 
@@ -358,8 +354,8 @@ export const FloorPlanCanvas: React.FC = () => {
       setDraggingFixtureId(null);
       recordHistory();
     }
-    if (resizingFixtureId) {
-      setResizingFixtureId(null);
+    if (draggingVertex) {
+      setDraggingVertex(null);
       recordHistory();
     }
     if (draggingOpeningId) {
@@ -524,6 +520,9 @@ export const FloorPlanCanvas: React.FC = () => {
       const w = fix.width * SCALE;
       const h = fix.height * SCALE;
       const geom = fix.geometry || 'rectangle';
+      const verts = fix.vertices && fix.vertices.length >= 3
+        ? fix.vertices
+        : getDefaultVerticesForGeometry(geom, fix.width, fix.height);
 
       return (
         <g
@@ -532,87 +531,22 @@ export const FloorPlanCanvas: React.FC = () => {
           onMouseDown={(e) => handleMouseDownFixture(e, fix)}
           className="cursor-grab active:cursor-grabbing group select-none"
         >
-          {/* 1. Rectangle Base Body (ONLY for rectangle shapes and standard furniture) */}
-          {(geom === 'rectangle' && !['circle', 'l_shape', 'u_shape', 't_shape', 'v_shape'].includes(geom)) && (
-            <rect
-              width={w}
-              height={h}
-              rx={3}
+          {/* Main Shape Polygon (Rendered dynamically through all vertices) */}
+          {geom === 'circle' && !fix.vertices ? (
+            <circle
+              cx={w / 2}
+              cy={h / 2}
+              r={Math.min(w, h) / 2 - 2}
+              fill={isSelected ? '#c99a6e' : '#ebd9c3'}
+              fillOpacity={0.9}
+              stroke={isSelected ? '#a67c52' : '#7f5539'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+          ) : (
+            <polygon
+              points={verts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
               fill={isSelected ? '#c99a6e' : (fix.type === 'booth_sponsor' ? '#fef3c7' : '#d5bdaf')}
               fillOpacity={0.88}
-              stroke={isSelected ? '#a67c52' : '#8d7b68'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
-              className="transition-colors"
-            />
-          )}
-
-          {/* 2. Circle / Round Shape */}
-          {geom === 'circle' && (
-            <g stroke={isSelected ? '#a67c52' : '#7f5539'} strokeWidth={isSelected ? 2.5 : 1.5}>
-              <circle
-                cx={w / 2}
-                cy={h / 2}
-                r={Math.min(w, h) / 2 - 2}
-                fill={isSelected ? '#c99a6e' : '#ebd9c3'}
-                fillOpacity={0.9}
-              />
-              {/* Banquet Chairs ONLY if explicitly round_banquet_table */}
-              {fix.type === 'round_banquet_table' &&
-                Array.from({ length: 8 }).map((_, idx) => {
-                  const angle = (idx * 2 * Math.PI) / 8;
-                  const r = Math.min(w, h) / 2 + 3;
-                  return (
-                    <circle
-                      key={idx}
-                      cx={w / 2 + r * Math.cos(angle)}
-                      cy={h / 2 + r * Math.sin(angle)}
-                      r={3}
-                      fill="#7f5539"
-                    />
-                  );
-                })}
-            </g>
-          )}
-
-          {/* 3. L-Shaped Geometry */}
-          {geom === 'l_shape' && (
-            <polygon
-              points={`0,0 ${w},0 ${w},${h * 0.4} ${w * 0.4},${h * 0.4} ${w * 0.4},${h} 0,${h}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              fillOpacity={0.9}
-              stroke={isSelected ? '#a67c52' : '#7f5539'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
-            />
-          )}
-
-          {/* 4. U-Shaped Geometry */}
-          {geom === 'u_shape' && (
-            <polygon
-              points={`0,0 ${w * 0.3},0 ${w * 0.3},${h * 0.6} ${w * 0.7},${h * 0.6} ${w * 0.7},0 ${w},0 ${w},${h} 0,${h}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              fillOpacity={0.9}
-              stroke={isSelected ? '#a67c52' : '#7f5539'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
-            />
-          )}
-
-          {/* 5. V-Shaped Geometry (Keynote Stages / Angular Booths) */}
-          {geom === 'v_shape' && (
-            <polygon
-              points={`0,0 ${w / 2},${h * 0.3} ${w},0 ${w},${h * 0.4} ${w / 2},${h} 0,${h * 0.4}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              fillOpacity={0.9}
-              stroke={isSelected ? '#a67c52' : '#7f5539'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
-            />
-          )}
-
-          {/* 6. T-Shaped Geometry */}
-          {geom === 't_shape' && (
-            <polygon
-              points={`0,0 ${w},0 ${w},${h * 0.35} ${w * 0.65},${h * 0.35} ${w * 0.65},${h} ${w * 0.35},${h} ${w * 0.35},${h * 0.35} 0,${h * 0.35}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              fillOpacity={0.9}
               stroke={isSelected ? '#a67c52' : '#7f5539'}
               strokeWidth={isSelected ? 2.5 : 1.5}
             />
@@ -678,42 +612,45 @@ export const FloorPlanCanvas: React.FC = () => {
             {fix.name}
           </text>
 
-          {/* Active Floating Controls & Resize Handles for Fixtures */}
+          {/* Interactive Vertex Corner Handles & Controls */}
           {isSelected && (
             <g>
-              {/* Outer Bounding Box */}
-              <rect
-                x={-3}
-                y={-3}
-                width={w + 6}
-                height={h + 6}
-                fill="none"
-                stroke="#a67c52"
-                strokeWidth={1.5}
-                strokeDasharray="3 3"
-              />
+              {/* Corner Vertex Grab Points (Remodeling Handles) */}
+              {verts.map((v: { x: number; y: number }, idx: number) => (
+                <circle
+                  key={idx}
+                  cx={v.x * SCALE}
+                  cy={v.y * SCALE}
+                  r={6}
+                  fill="#c99a6e"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  className="cursor-crosshair hover:scale-150 transition-transform pointer-events-auto"
+                  onMouseDown={(e) => handleMouseDownVertex(e, fix.id, idx, v)}
+                />
+              ))}
 
-              {/* Bottom-Right Corner Resize Handle */}
-              <circle
-                cx={w}
-                cy={h}
-                r={6}
-                fill="#c99a6e"
-                stroke="#ffffff"
-                strokeWidth={2}
-                className="cursor-nwse-resize hover:scale-125 transition-transform pointer-events-auto"
-                onMouseDown={(e) => handleMouseDownFixtureResize(e, fix)}
-              />
-
-              {/* Floating Quick Action Pill (Rotate / Clone / Delete) */}
+              {/* Floating Quick Action Pill */}
               <g
                 transform={`translate(${w / 2}, ${-24})`}
                 onClick={(e) => e.stopPropagation()}
                 className="pointer-events-auto"
               >
-                <rect x={-55} y={-10} width={110} height={20} rx={5} fill="#261e1b" stroke="#3d302a" />
+                <rect x={-80} y={-10} width={160} height={20} rx={5} fill="#261e1b" stroke="#3d302a" />
                 <text
-                  x={-36}
+                  x={-55}
+                  y={3}
+                  textAnchor="middle"
+                  fill="#c99a6e"
+                  fontSize="9"
+                  fontWeight="bold"
+                  className="cursor-pointer hover:fill-amber-300"
+                  onClick={() => addFixtureVertex(fix.id)}
+                >
+                  +PT
+                </text>
+                <text
+                  x={-20}
                   y={3}
                   textAnchor="middle"
                   fill="#e6ccb2"
@@ -725,7 +662,7 @@ export const FloorPlanCanvas: React.FC = () => {
                   ROT 90°
                 </text>
                 <text
-                  x={2}
+                  x={22}
                   y={3}
                   textAnchor="middle"
                   fill="#e6ccb2"
@@ -737,7 +674,7 @@ export const FloorPlanCanvas: React.FC = () => {
                   COPY
                 </text>
                 <text
-                  x={38}
+                  x={58}
                   y={3}
                   textAnchor="middle"
                   fill="#f87171"

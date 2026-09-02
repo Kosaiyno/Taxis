@@ -50,6 +50,60 @@ export const SHAPE_GEOMETRIES: Array<{ id: ShapeGeometry; label: string; icon: s
   { id: 'v_shape', label: 'V-Shape', icon: 'ChevronDown', description: 'V-shaped keynote stage or angled booth' },
 ];
 
+export function getDefaultVerticesForGeometry(geom: ShapeGeometry, w: number, h: number): Array<{ x: number; y: number }> {
+  switch (geom) {
+    case 'v_shape':
+      return [
+        { x: 0, y: 0 },
+        { x: w / 2, y: h * 0.3 },
+        { x: w, y: 0 },
+        { x: w, y: h * 0.4 },
+        { x: w / 2, y: h },
+        { x: 0, y: h * 0.4 },
+      ];
+    case 'l_shape':
+      return [
+        { x: 0, y: 0 },
+        { x: w, y: 0 },
+        { x: w, y: h * 0.4 },
+        { x: w * 0.4, y: h * 0.4 },
+        { x: w * 0.4, y: h },
+        { x: 0, y: h },
+      ];
+    case 'u_shape':
+      return [
+        { x: 0, y: 0 },
+        { x: w * 0.3, y: 0 },
+        { x: w * 0.3, y: h * 0.6 },
+        { x: w * 0.7, y: h * 0.6 },
+        { x: w * 0.7, y: 0 },
+        { x: w, y: 0 },
+        { x: w, y: h },
+        { x: 0, y: h },
+      ];
+    case 't_shape':
+      return [
+        { x: 0, y: 0 },
+        { x: w, y: 0 },
+        { x: w, y: h * 0.35 },
+        { x: w * 0.65, y: h * 0.35 },
+        { x: w * 0.65, y: h },
+        { x: w * 0.35, y: h },
+        { x: w * 0.35, y: h * 0.35 },
+        { x: 0, y: h * 0.35 },
+      ];
+    case 'rectangle':
+    case 'circle':
+    default:
+      return [
+        { x: 0, y: 0 },
+        { x: w, y: 0 },
+        { x: w, y: h },
+        { x: 0, y: h },
+      ];
+  }
+}
+
 export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
   // --- RESIDENTIAL ---
   living_room: {

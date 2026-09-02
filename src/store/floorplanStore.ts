@@ -11,8 +11,9 @@ import {
   WallOrientation,
   Unit,
   ShapeGeometry,
+  VertexPoint,
 } from '../types/floorplan';
-import { DEFAULT_INITIAL_PROJECT, ROOM_PRESETS, OPENING_PRESETS, FIXTURE_PRESETS } from '../utils/defaultPresets';
+import { DEFAULT_INITIAL_PROJECT, ROOM_PRESETS, OPENING_PRESETS, FIXTURE_PRESETS, getDefaultVerticesForGeometry } from '../utils/defaultPresets';
 import { snapToGrid } from '../utils/geometry';
 
 interface FloorPlanStore extends FloorPlanState {
@@ -60,6 +61,10 @@ interface FloorPlanStore extends FloorPlanState {
   rotateFixture: (id: string) => void;
   cloneFixture: (id: string) => string | null;
   deleteFixture: (id: string) => void;
+  updateFixtureVertex: (id: string, vertexIndex: number, newX: number, newY: number) => void;
+  addFixtureVertex: (id: string, afterIndex?: number) => void;
+  removeFixtureVertex: (id: string, vertexIndex: number) => void;
+  setFixtureVertices: (id: string, vertices: VertexPoint[]) => void;
 
   // Selection & Tools
   selectItem: (id: string | null, type: 'room' | 'opening' | 'fixture' | 'plot' | null) => void;
@@ -480,6 +485,71 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
       const fixtures = state.fixtures.filter((f) => f.id !== id);
       const selectedId = state.selectedId === id ? null : state.selectedId;
       const nextState = { ...state, fixtures, selectedId };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  updateFixtureVertex: (id, vertexIndex, newX, newY) => {
+    set((state) => {
+      const fixtures = state.fixtures.map((f) => {
+        if (f.id === id) {
+          const verts = f.vertices ? [...f.vertices] : getDefaultVerticesForGeometry(f.geometry || 'rectangle', f.width, f.height);
+          if (verts[vertexIndex]) {
+            verts[vertexIndex] = { x: Math.max(0, snapToGrid(newX, 0.05)), y: Math.max(0, snapToGrid(newY, 0.05)) };
+          }
+          return { ...f, vertices: verts };
+        }
+        return f;
+      });
+      return { fixtures };
+    });
+  },
+
+  addFixtureVertex: (id, afterIndex) => {
+    set((state) => {
+      const fixtures = state.fixtures.map((f) => {
+        if (f.id === id) {
+          const verts = f.vertices ? [...f.vertices] : getDefaultVerticesForGeometry(f.geometry || 'rectangle', f.width, f.height);
+          const idx = afterIndex !== undefined ? afterIndex : verts.length - 1;
+          const p1 = verts[idx];
+          const p2 = verts[(idx + 1) % verts.length];
+          const newPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+          verts.splice(idx + 1, 0, newPoint);
+          return { ...f, vertices: verts };
+        }
+        return f;
+      });
+      const nextState = { ...state, fixtures };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  removeFixtureVertex: (id, vertexIndex) => {
+    set((state) => {
+      const fixtures = state.fixtures.map((f) => {
+        if (f.id === id) {
+          let verts = f.vertices ? [...f.vertices] : getDefaultVerticesForGeometry(f.geometry || 'rectangle', f.width, f.height);
+          if (verts.length > 3) {
+            verts = verts.filter((_, i) => i !== vertexIndex);
+          }
+          return { ...f, vertices: verts };
+        }
+        return f;
+      });
+      const nextState = { ...state, fixtures };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  setFixtureVertices: (id, vertices) => {
+    set((state) => {
+      const fixtures = state.fixtures.map((f) => {
+        if (f.id === id) {
+          return { ...f, vertices };
+        }
+        return f;
+      });
+      const nextState = { ...state, fixtures };
       return { ...nextState, ...pushHistory(nextState) };
     });
   },

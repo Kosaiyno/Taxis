@@ -18,6 +18,11 @@ export type ShapeGeometry =
   | 'v_shape'
   | 'polygon';
 
+export interface VertexPoint {
+  x: number; // in meters relative to shape origin
+  y: number;
+}
+
 export type RoomType =
   // Residential
   | 'bedroom'
@@ -151,6 +156,8 @@ export interface Fixture {
   height: number;
   rotation: number; // 0, 90, 180, 270
   geometry?: ShapeGeometry; // rectangle, circle, l_shape, u_shape, t_shape, v_shape, polygon
+  vertices?: VertexPoint[]; // Freeform customizable polygon vertices
+  isRemodeling?: boolean;
   customColor?: string;
   notes?: string;
 }
@@ -164,6 +171,7 @@ export interface Room {
   width: number;
   height: number;
   geometry?: ShapeGeometry;
+  vertices?: VertexPoint[];
   color?: string;
   floorTexture?: 'wood' | 'tile' | 'concrete' | 'carpet' | 'grass' | 'plain';
 }

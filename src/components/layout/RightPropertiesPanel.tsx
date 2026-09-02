@@ -23,6 +23,8 @@ export const RightPropertiesPanel: React.FC = () => {
     rotateFixture,
     cloneFixture,
     deleteFixture,
+    addFixtureVertex,
+    removeFixtureVertex,
     rotateRoom,
     cloneRoom,
     deleteRoom,
@@ -85,7 +87,7 @@ export const RightPropertiesPanel: React.FC = () => {
                 {SHAPE_GEOMETRIES.map((geom) => (
                   <button
                     key={geom.id}
-                    onClick={() => updateFixture(selectedFixture.id, { geometry: geom.id })}
+                    onClick={() => updateFixture(selectedFixture.id, { geometry: geom.id, vertices: undefined })}
                     className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold transition text-center border ${
                       (selectedFixture.geometry || 'rectangle') === geom.id
                         ? 'bg-[#c99a6e] text-[#1c1512] border-[#c99a6e] font-bold shadow'
@@ -95,6 +97,26 @@ export const RightPropertiesPanel: React.FC = () => {
                     {geom.label.split(' ')[0]}
                   </button>
                 ))}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <button
+                  onClick={() => addFixtureVertex(selectedFixture.id)}
+                  className="flex-1 py-1 px-2 bg-[#261e1b] hover:bg-[#3d302a] text-[#c99a6e] text-[10px] font-semibold rounded-lg border border-[#3d302a] transition flex items-center justify-center gap-1"
+                >
+                  <span>+ Add Corner Point</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const verts = selectedFixture.vertices;
+                    if (verts && verts.length > 3) {
+                      removeFixtureVertex(selectedFixture.id, verts.length - 1);
+                    }
+                  }}
+                  className="py-1 px-2 bg-[#261e1b] hover:bg-[#3d302a] text-[#b08968] hover:text-rose-400 text-[10px] font-semibold rounded-lg border border-[#3d302a] transition"
+                  title="Remove last corner point"
+                >
+                  <span>- Point</span>
+                </button>
               </div>
             </div>
 

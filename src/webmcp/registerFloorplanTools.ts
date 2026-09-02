@@ -954,6 +954,65 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     },
   };
 
+  // 23. remodel_polygon_vertices
+  const remodelPolygonVerticesTool: ModelContextTool = {
+    name: 'remodel_polygon_vertices',
+    description: 'Remodels and sculpts any shape into custom polygon coordinates by setting exact (x, y) vertices.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        object_name_or_id: { type: 'string', description: 'Name or ID of object to reshape' },
+        vertices: {
+          type: 'array',
+          description: 'Array of {x, y} coordinate points in meters relative to object origin',
+          items: {
+            type: 'object',
+            properties: {
+              x: { type: 'number' },
+              y: { type: 'number' },
+            },
+            required: ['x', 'y'],
+          },
+        },
+      },
+      required: ['object_name_or_id', 'vertices'],
+      additionalProperties: false,
+    },
+    execute: async (input: { object_name_or_id: string; vertices: Array<{ x: number; y: number }> }) => {
+      const { fixtures, setFixtureVertices } = useFloorPlanStore.getState();
+      const target = fixtures.find(
+        (f) => f.id === input.object_name_or_id || f.name.toLowerCase().includes(input.object_name_or_id.toLowerCase())
+      );
+      if (!target) return { success: false, error: `Object "${input.object_name_or_id}" not found.` };
+      setFixtureVertices(target.id, input.vertices);
+      return { success: true, message: `Successfully remodeled ${target.name} with ${input.vertices.length} custom polygon vertices.` };
+    },
+  };
+
+  // 24. add_polygon_vertex
+  const addPolygonVertexTool: ModelContextTool = {
+    name: 'add_polygon_vertex',
+    description: 'Adds a new corner point to a polygon shape so it can be remodeled with more detail.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        object_name_or_id: { type: 'string', description: 'Name or ID of object' },
+        after_index: { type: 'number', description: 'Index after which to insert new vertex' },
+      },
+      required: ['object_name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: { object_name_or_id: string; after_index?: number }) => {
+      const { fixtures, addFixtureVertex } = useFloorPlanStore.getState();
+      const target = fixtures.find(
+        (f) => f.id === input.object_name_or_id || f.name.toLowerCase().includes(input.object_name_or_id.toLowerCase())
+      );
+      if (!target) return { success: false, error: `Object "${input.object_name_or_id}" not found.` };
+      addFixtureVertex(target.id, input.after_index);
+      return { success: true, message: `Added new corner point to ${target.name}.` };
+    },
+  };
+
   const allTools = [
     getFloorplanStateTool,
     setPlotDimensionsTool,
@@ -977,6 +1036,8 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     reshapeObjectTool,
     renameElementTool,
     batchCreateGridLayoutTool,
+    remodelPolygonVerticesTool,
+    addPolygonVertexTool,
   ];
 
   // 1. Register with browser native document.modelContext
