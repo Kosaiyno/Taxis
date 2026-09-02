@@ -6,6 +6,7 @@ import {
   FixtureType,
   OpeningType,
   SpaceCategory,
+  ShapeGeometry,
 } from '../types/floorplan';
 
 export interface RoomPresetConfig {
@@ -27,15 +28,26 @@ export interface FixturePresetConfig {
   defaultWidth: number;
   defaultHeight: number;
   iconName: string;
+  defaultGeometry?: ShapeGeometry;
 }
 
 export const SPACE_CATEGORIES: Array<{ id: SpaceCategory; label: string; icon: string }> = [
   { id: 'residential', label: 'Home & Living', icon: 'Home' },
   { id: 'commercial_office', label: 'Office & Co-Working', icon: 'Briefcase' },
+  { id: 'events_exhibition', label: 'Events & Expo Halls', icon: 'Sparkles' },
   { id: 'cafe_restaurant', label: 'Cafe & Dining', icon: 'Coffee' },
   { id: 'retail_store', label: 'Retail & Boutique', icon: 'ShoppingBag' },
   { id: 'clinic_wellness', label: 'Clinic & Wellness', icon: 'Activity' },
-  { id: 'studio_workshop', label: 'Studio & Workshop', icon: 'PenTool' },
+  { id: 'studio_workshop', label: 'Studio & Production', icon: 'Film' },
+];
+
+export const SHAPE_GEOMETRIES: Array<{ id: ShapeGeometry; label: string; icon: string; description: string }> = [
+  { id: 'rectangle', label: 'Rectangle / Box', icon: 'Square', description: 'Standard 4-sided parametric box' },
+  { id: 'circle', label: 'Circle / Round', icon: 'Circle', description: 'Round banquet, stage, or pillar' },
+  { id: 'l_shape', label: 'L-Shape', icon: 'CornerDownRight', description: 'L-shaped desk, booth, or counter' },
+  { id: 'u_shape', label: 'U-Shape', icon: 'MoveVertical', description: 'U-shaped booth, seating, or counter' },
+  { id: 't_shape', label: 'T-Shape', icon: 'Split', description: 'T-shaped conference desk or runway' },
+  { id: 'v_shape', label: 'V-Shape', icon: 'ChevronDown', description: 'V-shaped keynote stage or angled booth' },
 ];
 
 export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
@@ -162,6 +174,74 @@ export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
     itemCount: '2 items',
   },
 
+  // --- EVENTS & EXPO HALLS ---
+  exhibition_hall: {
+    name: 'Main Expo Floor',
+    type: 'exhibition_hall',
+    category: 'events_exhibition',
+    defaultWidth: 30.0,
+    defaultHeight: 20.0,
+    color: '#ebd9c3',
+    floorTexture: 'concrete',
+    iconName: 'Grid',
+    itemCount: '40 Booths',
+  },
+  keynote_auditorium: {
+    name: 'Keynote Stage Hall',
+    type: 'keynote_auditorium',
+    category: 'events_exhibition',
+    defaultWidth: 16.0,
+    defaultHeight: 12.0,
+    color: '#f3e6d8',
+    floorTexture: 'carpet',
+    iconName: 'Presentation',
+    itemCount: 'Main Stage',
+  },
+  vip_lounge: {
+    name: 'VIP & Sponsor Lounge',
+    type: 'vip_lounge',
+    category: 'events_exhibition',
+    defaultWidth: 8.0,
+    defaultHeight: 6.0,
+    color: '#eddcc9',
+    floorTexture: 'carpet',
+    iconName: 'Sparkles',
+    itemCount: 'Seating',
+  },
+  banquet_hall: {
+    name: 'Gala Banquet Ballroom',
+    type: 'banquet_hall',
+    category: 'events_exhibition',
+    defaultWidth: 18.0,
+    defaultHeight: 14.0,
+    color: '#f5ebe0',
+    floorTexture: 'wood',
+    iconName: 'Wine',
+    itemCount: '120 Guests',
+  },
+  backstage_greenroom: {
+    name: 'Green Room / Crew AV',
+    type: 'backstage_greenroom',
+    category: 'events_exhibition',
+    defaultWidth: 5.0,
+    defaultHeight: 4.0,
+    color: '#ded6ce',
+    floorTexture: 'carpet',
+    iconName: 'Radio',
+    itemCount: 'Crew Setup',
+  },
+  film_studio_stage: {
+    name: 'Production Soundstage',
+    type: 'film_studio_stage',
+    category: 'studio_workshop',
+    defaultWidth: 14.0,
+    defaultHeight: 10.0,
+    color: '#ded6ce',
+    floorTexture: 'concrete',
+    iconName: 'Film',
+    itemCount: 'Cameras & AV',
+  },
+
   // --- COMMERCIAL & OFFICE ---
   open_workspace: {
     name: 'Open Work Floor',
@@ -212,7 +292,7 @@ export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
     type: 'breakroom',
     category: 'commercial_office',
     defaultWidth: 4.0,
-    defaultHeight: 3.0,
+    defaultHeight: 3.5,
     color: '#eae0d2',
     floorTexture: 'tile',
     iconName: 'Coffee',
@@ -383,7 +463,7 @@ export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
 
   // Custom
   custom: {
-    name: 'Custom Room Shape',
+    name: 'Custom Zone / Shape',
     type: 'custom',
     category: 'residential',
     defaultWidth: 4.0,
@@ -396,6 +476,20 @@ export const ROOM_PRESETS: Record<RoomType, RoomPresetConfig> = {
 };
 
 export const FIXTURE_PRESETS: Record<FixtureType, FixturePresetConfig> = {
+  // Generic Geometric Entity
+  custom_shape: { name: 'Generic Shape Entity', type: 'custom_shape', category: 'residential', defaultWidth: 2.0, defaultHeight: 2.0, iconName: 'Square', defaultGeometry: 'rectangle' },
+
+  // Events & Exhibition
+  booth_standard: { name: 'Standard Expo Booth (3x3)', type: 'booth_standard', category: 'events_exhibition', defaultWidth: 3.0, defaultHeight: 3.0, iconName: 'Grid' },
+  booth_sponsor: { name: 'Gold Sponsor Island Booth (6x6)', type: 'booth_sponsor', category: 'events_exhibition', defaultWidth: 6.0, defaultHeight: 6.0, iconName: 'Sparkles' },
+  keynote_stage: { name: 'Keynote Main Stage (8x4)', type: 'keynote_stage', category: 'events_exhibition', defaultWidth: 8.0, defaultHeight: 4.0, iconName: 'Presentation' },
+  stage_v_shape: { name: 'V-Shaped Angular Stage', type: 'stage_v_shape', category: 'events_exhibition', defaultWidth: 7.0, defaultHeight: 4.5, iconName: 'ChevronDown', defaultGeometry: 'v_shape' },
+  round_banquet_table: { name: 'Round Banquet Table (10-Pax)', type: 'round_banquet_table', category: 'events_exhibition', defaultWidth: 2.2, defaultHeight: 2.2, iconName: 'Circle', defaultGeometry: 'circle' },
+  av_console: { name: 'AV & Sound Tech Rig', type: 'av_console', category: 'events_exhibition', defaultWidth: 2.4, defaultHeight: 1.2, iconName: 'Radio' },
+  camera_rig: { name: 'Studio Camera & Lighting Position', type: 'camera_rig', category: 'events_exhibition', defaultWidth: 1.5, defaultHeight: 1.5, iconName: 'Camera', defaultGeometry: 'circle' },
+  registration_counter: { name: 'L-Shaped Registration Desk', type: 'registration_counter', category: 'events_exhibition', defaultWidth: 3.2, defaultHeight: 2.0, iconName: 'CornerDownRight', defaultGeometry: 'l_shape' },
+  lighting_truss: { name: 'Overhead Truss / Rigging', type: 'lighting_truss', category: 'events_exhibition', defaultWidth: 6.0, defaultHeight: 0.6, iconName: 'MoveHorizontal' },
+
   // Residential
   sofa: { name: 'Living Sofa (3-Seat)', type: 'sofa', category: 'residential', defaultWidth: 2.2, defaultHeight: 0.9, iconName: 'Sofa' },
   bed_king: { name: 'King Size Bed', type: 'bed_king', category: 'residential', defaultWidth: 2.0, defaultHeight: 2.0, iconName: 'BedDouble' },
@@ -413,23 +507,23 @@ export const FIXTURE_PRESETS: Record<FixtureType, FixturePresetConfig> = {
   car: { name: 'Sedan / SUV Vehicle', type: 'car', category: 'residential', defaultWidth: 1.9, defaultHeight: 4.8, iconName: 'Car' },
 
   // Commercial & Office
-  executive_desk: { name: 'Executive L-Desk', type: 'executive_desk', category: 'commercial_office', defaultWidth: 2.0, defaultHeight: 1.6, iconName: 'Briefcase' },
+  executive_desk: { name: 'Executive L-Desk', type: 'executive_desk', category: 'commercial_office', defaultWidth: 2.0, defaultHeight: 1.6, iconName: 'Briefcase', defaultGeometry: 'l_shape' },
   conference_table: { name: 'Conference Board Table', type: 'conference_table', category: 'commercial_office', defaultWidth: 3.5, defaultHeight: 1.2, iconName: 'Presentation' },
   workstation_cluster: { name: 'Workstation Pod (4 Desks)', type: 'workstation_cluster', category: 'commercial_office', defaultWidth: 2.8, defaultHeight: 2.4, iconName: 'Users' },
-  reception_desk: { name: 'Curved Reception Counter', type: 'reception_desk', category: 'commercial_office', defaultWidth: 2.4, defaultHeight: 1.0, iconName: 'Building' },
-  office_chair: { name: 'Ergonomic Task Chair', type: 'office_chair', category: 'commercial_office', defaultWidth: 0.6, defaultHeight: 0.6, iconName: 'Smile' },
+  reception_desk: { name: 'Curved Reception Counter', type: 'reception_desk', category: 'commercial_office', defaultWidth: 2.4, defaultHeight: 1.0, iconName: 'Building', defaultGeometry: 'u_shape' },
+  office_chair: { name: 'Ergonomic Task Chair', type: 'office_chair', category: 'commercial_office', defaultWidth: 0.6, defaultHeight: 0.6, iconName: 'Smile', defaultGeometry: 'circle' },
 
   // Cafe & Restaurant
   espresso_bar: { name: 'Commercial Espresso Bar', type: 'espresso_bar', category: 'cafe_restaurant', defaultWidth: 3.5, defaultHeight: 0.9, iconName: 'Coffee' },
-  dining_booth: { name: 'Dining Booth Bench', type: 'dining_booth', category: 'cafe_restaurant', defaultWidth: 1.8, defaultHeight: 1.2, iconName: 'Armchair' },
-  bar_counter: { name: 'Bar Stool Counter', type: 'bar_counter', category: 'cafe_restaurant', defaultWidth: 3.0, defaultHeight: 0.7, iconName: 'GlassWater' },
-  restaurant_table: { name: 'Bistro Table (4-Top)', type: 'restaurant_table', category: 'cafe_restaurant', defaultWidth: 0.9, defaultHeight: 0.9, iconName: 'Utensils' },
+  dining_booth: { name: 'Dining Booth Bench (U-Shape)', type: 'dining_booth', category: 'cafe_restaurant', defaultWidth: 1.8, defaultHeight: 1.4, iconName: 'Armchair', defaultGeometry: 'u_shape' },
+  bar_counter: { name: 'Bar Stool Counter (L-Shape)', type: 'bar_counter', category: 'cafe_restaurant', defaultWidth: 3.2, defaultHeight: 1.6, iconName: 'GlassWater', defaultGeometry: 'l_shape' },
+  restaurant_table: { name: 'Round Bistro Table', type: 'restaurant_table', category: 'cafe_restaurant', defaultWidth: 1.0, defaultHeight: 1.0, iconName: 'Utensils', defaultGeometry: 'circle' },
   pos_terminal: { name: 'POS Cash Register', type: 'pos_terminal', category: 'cafe_restaurant', defaultWidth: 0.8, defaultHeight: 0.6, iconName: 'CreditCard' },
 
   // Retail
   clothing_rack: { name: 'Apparel Display Rack', type: 'clothing_rack', category: 'retail_store', defaultWidth: 1.6, defaultHeight: 0.6, iconName: 'Tag' },
   display_shelving: { name: 'Gondola Retail Shelving', type: 'display_shelving', category: 'retail_store', defaultWidth: 2.2, defaultHeight: 0.8, iconName: 'Grid' },
-  checkout_counter: { name: 'Retail Cash Wrap Counter', type: 'checkout_counter', category: 'retail_store', defaultWidth: 2.0, defaultHeight: 0.8, iconName: 'Receipt' },
+  checkout_counter: { name: 'Retail Cash Wrap Counter (L-Shape)', type: 'checkout_counter', category: 'retail_store', defaultWidth: 2.4, defaultHeight: 1.4, iconName: 'Receipt', defaultGeometry: 'l_shape' },
 
   // Clinic
   exam_bed: { name: 'Medical Exam / Massage Bed', type: 'exam_bed', category: 'clinic_wellness', defaultWidth: 2.0, defaultHeight: 0.7, iconName: 'Activity' },
@@ -454,7 +548,7 @@ export const OPENING_PRESETS: Record<
 };
 
 export const DEFAULT_INITIAL_PROJECT = {
-  projectName: 'My Architectural Space',
+  projectName: 'My Taxis Spatial Plan',
   plot: {
     width: 16.0,
     height: 14.0,

@@ -5,7 +5,6 @@ import {
   Download,
   LandPlot,
   Check,
-  ChevronLeft,
   Trash2,
   RotateCcw,
   PlusCircle,
@@ -59,40 +58,48 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   return (
     <>
       <header className="h-12 bg-[#1c1512] border-b border-[#3d302a] px-3 flex items-center justify-between select-none z-30 text-xs text-[#e6ccb2]">
-        {/* Left: Breadcrumb & Title */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenPlotModal}
-            className="flex items-center gap-1 text-[#b08968] hover:text-white px-2 py-1 rounded hover:bg-[#261e1b] transition"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span>Projects</span>
-          </button>
+        {/* Left: TAXIS Branding & Project Title */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 pr-2 border-r border-[#3d302a]">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c99a6e] to-[#8d7b68] flex items-center justify-center shadow-md text-[#1c1512] font-black text-sm tracking-tighter">
+              TX
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-[#f5ebe0] tracking-wider text-xs font-mono uppercase">
+                TAXIS
+              </span>
+              <span className="text-[9px] text-[#b08968] font-sans -mt-0.5">
+                Spatial Engine
+              </span>
+            </div>
+          </div>
 
-          <span className="text-[#4a3b34]">/</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#4a3b34]">/</span>
 
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              onBlur={() => setIsEditingTitle(false)}
-              onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
-              autoFocus
-              className="bg-[#261e1b] text-[#f5ebe0] font-semibold px-2 py-0.5 rounded border border-[#c99a6e] focus:outline-none"
-            />
-          ) : (
-            <button
-              onClick={() => setIsEditingTitle(true)}
-              className="text-[#f5ebe0] hover:text-[#c99a6e] font-semibold px-2 py-1 rounded hover:bg-[#261e1b] transition"
-            >
-              <span>{projectName}</span>
-            </button>
-          )}
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                autoFocus
+                className="bg-[#261e1b] text-[#f5ebe0] font-semibold px-2 py-0.5 rounded border border-[#c99a6e] focus:outline-none text-xs"
+              />
+            ) : (
+              <button
+                onClick={() => setIsEditingTitle(true)}
+                className="text-[#f5ebe0] hover:text-[#c99a6e] font-semibold px-2 py-1 rounded hover:bg-[#261e1b] transition text-xs"
+              >
+                <span>{projectName}</span>
+              </button>
+            )}
 
-          <span className="bg-[#261e1b] text-[#b08968] font-mono text-[10px] px-2 py-0.5 rounded border border-[#3d302a]">
-            Ground Floor
-          </span>
+            <span className="bg-[#261e1b] text-[#b08968] font-mono text-[9px] px-1.5 py-0.5 rounded border border-[#3d302a]">
+              WebMCP Live
+            </span>
+          </div>
         </div>
 
         {/* Center: Undo/Redo, Clear, Units */}

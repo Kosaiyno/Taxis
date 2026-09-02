@@ -729,6 +729,231 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     },
   };
 
+  // 19. add_custom_shape (Generic Parametric Geometry)
+  const addCustomShapeTool: ModelContextTool = {
+    name: 'add_custom_shape',
+    description: 'Adds a generic parametric shape entity (rectangle, circle, l_shape, u_shape, t_shape, v_shape) with custom name, dimensions, and coordinates. Use for custom stages, booths, reception counters, tables, or equipment.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Custom name/label for the shape (e.g. "Main Keynote V-Stage", "Gold Sponsor Booth", "L-Shaped Reception")' },
+        geometry: {
+          type: 'string',
+          enum: ['rectangle', 'circle', 'l_shape', 'u_shape', 't_shape', 'v_shape'],
+          description: 'Geometric form of the shape entity',
+        },
+        width: { type: 'number', description: 'Width / diameter of the shape in meters' },
+        height: { type: 'number', description: 'Length / depth of the shape in meters' },
+        x: { type: 'number', description: 'X position on canvas/room in meters' },
+        y: { type: 'number', description: 'Y position on canvas/room in meters' },
+        rotation: { type: 'number', enum: [0, 90, 180, 270], description: 'Rotation in degrees' },
+        room_name_or_id: { type: 'string', description: 'Optional room/zone name to place inside' },
+      },
+      required: ['name', 'geometry', 'width', 'height'],
+      additionalProperties: false,
+    },
+    execute: async (input: {
+      name: string;
+      geometry: 'rectangle' | 'circle' | 'l_shape' | 'u_shape' | 't_shape' | 'v_shape';
+      width: number;
+      height: number;
+      x?: number;
+      y?: number;
+      rotation?: number;
+      room_name_or_id?: string;
+    }) => {
+      const { rooms, addFixture } = useFloorPlanStore.getState();
+      const targetRoom = input.room_name_or_id ? findTargetRoom(rooms, input.room_name_or_id) : rooms[0];
+      const targetRoomId = targetRoom ? targetRoom.id : 'canvas';
+
+      const fixId = addFixture({
+        roomId: targetRoomId,
+        type: 'custom_shape',
+        name: input.name,
+        width: input.width,
+        height: input.height,
+        x: input.x !== undefined ? input.x : 2.0,
+        y: input.y !== undefined ? input.y : 2.0,
+        rotation: input.rotation || 0,
+        geometry: input.geometry,
+      });
+
+      return {
+        success: true,
+        shapeId: fixId,
+        name: input.name,
+        geometry: input.geometry,
+        dimensions: `${input.width}m × ${input.height}m`,
+        message: `Created ${input.geometry} shape "${input.name}" (${input.width}m × ${input.height}m).`,
+      };
+    },
+  };
+
+  // 20. reshape_object
+  const reshapeObjectTool: ModelContextTool = {
+    name: 'reshape_object',
+    description: 'Remodels or resizes any object/fixture/shape on the canvas (change geometry, width, depth, rotation, or name).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        object_name_or_id: { type: 'string', description: 'Name or ID of the object/shape to remodel' },
+        new_name: { type: 'string', description: 'Optional new label/name' },
+        new_geometry: {
+          type: 'string',
+          enum: ['rectangle', 'circle', 'l_shape', 'u_shape', 't_shape', 'v_shape'],
+          description: 'New geometric shape form',
+        },
+        new_width: { type: 'number', description: 'New width in meters' },
+        new_height: { type: 'number', description: 'New depth/length in meters' },
+        new_rotation: { type: 'number', enum: [0, 90, 180, 270], description: 'New rotation angle' },
+      },
+      required: ['object_name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: {
+      object_name_or_id: string;
+      new_name?: string;
+      new_geometry?: any;
+      new_width?: number;
+      new_height?: number;
+      new_rotation?: number;
+    }) => {
+      const { fixtures, updateFixture } = useFloorPlanStore.getState();
+      const q = input.object_name_or_id.toLowerCase();
+      const target = fixtures.find((f) => f.id === input.object_name_or_id || f.name.toLowerCase().includes(q));
+
+      if (!target) {
+        throw new Error(`Object "${input.object_name_or_id}" not found.`);
+      }
+
+      const updates: any = {};
+      if (input.new_name) updates.name = input.new_name;
+      if (input.new_geometry) updates.geometry = input.new_geometry;
+      if (input.new_width) updates.width = input.new_width;
+      if (input.new_height) updates.height = input.new_height;
+      if (input.new_rotation !== undefined) updates.rotation = input.new_rotation;
+
+      updateFixture(target.id, updates);
+
+      return {
+        success: true,
+        objectId: target.id,
+        updatedFields: updates,
+        message: `Object "${target.name}" successfully remodeled.`,
+      };
+    },
+  };
+
+  // 21. rename_element
+  const renameElementTool: ModelContextTool = {
+    name: 'rename_element',
+    description: 'Renames any room, shape, or furniture item on the canvas.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        element_name_or_id: { type: 'string', description: 'Current name or ID of the room or object' },
+        new_name: { type: 'string', description: 'The new name to assign' },
+      },
+      required: ['element_name_or_id', 'new_name'],
+      additionalProperties: false,
+    },
+    execute: async (input: { element_name_or_id: string; new_name: string }) => {
+      const { rooms, fixtures, updateRoom, updateFixture } = useFloorPlanStore.getState();
+      const q = input.element_name_or_id.toLowerCase();
+
+      // Check rooms
+      const room = rooms.find((r) => r.id === input.element_name_or_id || r.name.toLowerCase().includes(q));
+      if (room) {
+        updateRoom(room.id, { name: input.new_name });
+        return { success: true, type: 'room', id: room.id, newName: input.new_name };
+      }
+
+      // Check fixtures
+      const fix = fixtures.find((f) => f.id === input.element_name_or_id || f.name.toLowerCase().includes(q));
+      if (fix) {
+        updateFixture(fix.id, { name: input.new_name });
+        return { success: true, type: 'fixture', id: fix.id, newName: input.new_name };
+      }
+
+      throw new Error(`Element "${input.element_name_or_id}" not found.`);
+    },
+  };
+
+  // 22. batch_create_grid_layout
+  const batchCreateGridLayoutTool: ModelContextTool = {
+    name: 'batch_create_grid_layout',
+    description: 'Generates a matrix/grid of N items with designated rows, columns, and aisle spacing. Perfect for creating 20-50 exhibition booths, banquet tables, or workstation pods in seconds.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        item_type: {
+          type: 'string',
+          enum: ['booth_standard', 'booth_sponsor', 'round_banquet_table', 'workstation_cluster', 'desk', 'custom_shape'],
+          description: 'Type of item to replicate in grid',
+        },
+        item_name_prefix: { type: 'string', description: 'Naming prefix (e.g. "Booth", "Table", "Station")' },
+        count: { type: 'number', description: 'Total number of items to create (e.g. 30)' },
+        columns: { type: 'number', description: 'Number of columns in the grid (e.g. 5)' },
+        item_width: { type: 'number', description: 'Width of each item in meters (e.g. 3.0)' },
+        item_height: { type: 'number', description: 'Depth/height of each item in meters (e.g. 3.0)' },
+        aisle_x: { type: 'number', description: 'Horizontal aisle clearance between columns in meters (e.g. 2.0)' },
+        aisle_y: { type: 'number', description: 'Vertical aisle clearance between rows in meters (e.g. 2.0)' },
+        start_x: { type: 'number', description: 'Start X coordinate in meters (default: 2.0)' },
+        start_y: { type: 'number', description: 'Start Y coordinate in meters (default: 2.0)' },
+      },
+      required: ['item_type', 'count', 'columns', 'item_width', 'item_height'],
+      additionalProperties: false,
+    },
+    execute: async (input: {
+      item_type: FixtureType;
+      item_name_prefix?: string;
+      count: number;
+      columns: number;
+      item_width: number;
+      item_height: number;
+      aisle_x?: number;
+      aisle_y?: number;
+      start_x?: number;
+      start_y?: number;
+    }) => {
+      const { rooms, addFixture } = useFloorPlanStore.getState();
+      const targetRoomId = rooms[0]?.id || 'canvas';
+      const startX = input.start_x || 2.0;
+      const startY = input.start_y || 2.0;
+      const aisleX = input.aisle_x || 1.5;
+      const aisleY = input.aisle_y || 1.5;
+      const prefix = input.item_name_prefix || 'Item';
+
+      const createdIds: string[] = [];
+
+      for (let i = 0; i < input.count; i++) {
+        const row = Math.floor(i / input.columns);
+        const col = i % input.columns;
+        const x = startX + col * (input.item_width + aisleX);
+        const y = startY + row * (input.item_height + aisleY);
+
+        const id = addFixture({
+          roomId: targetRoomId,
+          type: input.item_type,
+          name: `${prefix} ${i + 1}`,
+          width: input.item_width,
+          height: input.item_height,
+          x,
+          y,
+          geometry: input.item_type === 'round_banquet_table' ? 'circle' : 'rectangle',
+        });
+        createdIds.push(id);
+      }
+
+      return {
+        success: true,
+        createdCount: createdIds.length,
+        itemIds: createdIds,
+        message: `Batch generated ${createdIds.length} ${input.item_type} items in a ${Math.ceil(input.count / input.columns)}x${input.columns} grid with ${aisleX}m / ${aisleY}m aisle clearance.`,
+      };
+    },
+  };
+
   const allTools = [
     getFloorplanStateTool,
     setPlotDimensionsTool,
@@ -748,6 +973,10 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     autoArrangeTool,
     calculateComplianceTool,
     clearFloorplanTool,
+    addCustomShapeTool,
+    reshapeObjectTool,
+    renameElementTool,
+    batchCreateGridLayoutTool,
   ];
 
   // 1. Register with browser native document.modelContext

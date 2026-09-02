@@ -3,10 +3,20 @@ export type Unit = 'm' | 'ft';
 export type SpaceCategory =
   | 'residential'
   | 'commercial_office'
+  | 'events_exhibition'
   | 'cafe_restaurant'
   | 'retail_store'
   | 'clinic_wellness'
   | 'studio_workshop';
+
+export type ShapeGeometry =
+  | 'rectangle'
+  | 'circle'
+  | 'l_shape'
+  | 'u_shape'
+  | 't_shape'
+  | 'v_shape'
+  | 'polygon';
 
 export type RoomType =
   // Residential
@@ -29,6 +39,13 @@ export type RoomType =
   | 'reception_lobby'
   | 'breakroom'
   | 'phone_booth'
+  // Events & Production
+  | 'exhibition_hall'
+  | 'keynote_auditorium'
+  | 'vip_lounge'
+  | 'backstage_greenroom'
+  | 'banquet_hall'
+  | 'film_studio_stage'
   // Cafe & Restaurant
   | 'cafe_dining'
   | 'espresso_bar'
@@ -52,7 +69,9 @@ export type OpeningType = 'single_door' | 'double_door' | 'sliding_door' | 'pock
 export type WallOrientation = 'north' | 'south' | 'east' | 'west';
 
 export type FixtureType =
-  // Standard & Living
+  // Generic Geometric Entities
+  | 'custom_shape'
+  // Standard & Residential
   | 'stairs'
   | 'sofa'
   | 'bed_king'
@@ -60,7 +79,6 @@ export type FixtureType =
   | 'wardrobe'
   | 'dining_table'
   | 'desk'
-  // Kitchen & Sanitary
   | 'kitchen_counter'
   | 'kitchen_island'
   | 'sink'
@@ -74,6 +92,16 @@ export type FixtureType =
   | 'workstation_cluster'
   | 'reception_desk'
   | 'office_chair'
+  // Events, Trade Shows & Studios
+  | 'booth_standard'
+  | 'booth_sponsor'
+  | 'keynote_stage'
+  | 'stage_v_shape'
+  | 'round_banquet_table'
+  | 'av_console'
+  | 'camera_rig'
+  | 'registration_counter'
+  | 'lighting_truss'
   // Cafe & Restaurant
   | 'espresso_bar'
   | 'dining_booth'
@@ -117,11 +145,14 @@ export interface Fixture {
   roomId: string;
   type: FixtureType;
   name: string;
-  x: number; // offset in meters inside room
+  x: number; // offset in meters inside room or canvas
   y: number;
   width: number;
   height: number;
   rotation: number; // 0, 90, 180, 270
+  geometry?: ShapeGeometry; // rectangle, circle, l_shape, u_shape, t_shape, v_shape, polygon
+  customColor?: string;
+  notes?: string;
 }
 
 export interface Room {
@@ -132,6 +163,7 @@ export interface Room {
   y: number;
   width: number;
   height: number;
+  geometry?: ShapeGeometry;
   color?: string;
   floorTexture?: 'wood' | 'tile' | 'concrete' | 'carpet' | 'grass' | 'plain';
 }
@@ -144,11 +176,12 @@ export interface FloorPlanState {
   fixtures: Fixture[];
   selectedId: string | null;
   selectedType: 'room' | 'opening' | 'fixture' | 'plot' | null;
-  activeTool: 'select' | 'room' | 'wall' | 'door' | 'window' | 'stairs' | 'fixture' | 'pan';
+  activeTool: 'select' | 'room' | 'wall' | 'door' | 'window' | 'stairs' | 'fixture' | 'pan' | 'shape';
   activeCategory?: SpaceCategory;
   activeRoomPreset?: RoomType;
   activeOpeningPreset?: OpeningType;
   activeFixturePreset?: FixtureType;
+  activeShapePreset?: ShapeGeometry;
   gridSnap: boolean;
   gridSnapSize: number; // 0.1m, 0.25m, 0.5m
   showDimensions: boolean;

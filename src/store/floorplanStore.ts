@@ -10,6 +10,7 @@ import {
   FixtureType,
   WallOrientation,
   Unit,
+  ShapeGeometry,
 } from '../types/floorplan';
 import { DEFAULT_INITIAL_PROJECT, ROOM_PRESETS, OPENING_PRESETS, FIXTURE_PRESETS } from '../utils/defaultPresets';
 import { snapToGrid } from '../utils/geometry';
@@ -39,8 +40,20 @@ interface FloorPlanStore extends FloorPlanState {
   flipOpeningSwing: (id: string) => void;
   deleteOpening: (id: string) => void;
   
-  // Fixture Actions (Furniture, Sanitary, Stairs)
-  addFixture: (fixtureData: { roomId: string; type: FixtureType; name?: string; x?: number; y?: number; width?: number; height?: number; rotation?: number }) => string;
+  // Fixture Actions (Furniture, Sanitary, Stairs, Custom Shapes)
+  addFixture: (fixtureData: {
+    roomId: string;
+    type: FixtureType;
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    rotation?: number;
+    geometry?: ShapeGeometry;
+    customColor?: string;
+    notes?: string;
+  }) => string;
   updateFixture: (id: string, updates: Partial<Fixture>) => void;
   moveFixture: (id: string, x: number, y: number, newRoomId?: string) => void;
   resizeFixture: (id: string, width: number, height: number) => void;
@@ -368,12 +381,15 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
       id,
       roomId: fixtureData.roomId,
       type: fixtureData.type,
-      name: fixtureData.name || preset.name,
+      name: fixtureData.name || preset?.name || 'Object',
       x: fixtureData.x ?? 0.8,
       y: fixtureData.y ?? 0.8,
-      width: fixtureData.width ?? preset.defaultWidth,
-      height: fixtureData.height ?? preset.defaultHeight,
+      width: fixtureData.width ?? preset?.defaultWidth ?? 2.0,
+      height: fixtureData.height ?? preset?.defaultHeight ?? 1.0,
       rotation: fixtureData.rotation ?? 0,
+      geometry: fixtureData.geometry || preset?.defaultGeometry || 'rectangle',
+      customColor: fixtureData.customColor,
+      notes: fixtureData.notes,
     };
 
     set((state) => {
