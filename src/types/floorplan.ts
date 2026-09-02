@@ -1,6 +1,15 @@
 export type Unit = 'm' | 'ft';
 
+export type SpaceCategory =
+  | 'residential'
+  | 'commercial_office'
+  | 'cafe_restaurant'
+  | 'retail_store'
+  | 'clinic_wellness'
+  | 'studio_workshop';
+
 export type RoomType =
+  // Residential
   | 'bedroom'
   | 'master_bedroom'
   | 'bathroom'
@@ -9,10 +18,33 @@ export type RoomType =
   | 'dining_room'
   | 'garage'
   | 'hallway'
-  | 'office'
   | 'balcony'
   | 'patio'
   | 'laundry'
+  // Commercial & Office
+  | 'office'
+  | 'open_workspace'
+  | 'conference_room'
+  | 'executive_office'
+  | 'reception_lobby'
+  | 'breakroom'
+  | 'phone_booth'
+  // Cafe & Restaurant
+  | 'cafe_dining'
+  | 'espresso_bar'
+  | 'commercial_kitchen'
+  // Retail
+  | 'retail_showroom'
+  | 'fitting_room'
+  | 'stockroom'
+  // Clinic & Health
+  | 'exam_room'
+  | 'consultation_room'
+  | 'waiting_lounge'
+  // Studio & Workshop
+  | 'creative_studio'
+  | 'maker_workshop'
+  | 'storage_unit'
   | 'custom';
 
 export type OpeningType = 'single_door' | 'double_door' | 'sliding_door' | 'pocket_door' | 'window' | 'bay_window';
@@ -20,23 +52,48 @@ export type OpeningType = 'single_door' | 'double_door' | 'sliding_door' | 'pock
 export type WallOrientation = 'north' | 'south' | 'east' | 'west';
 
 export type FixtureType =
+  // Standard & Living
   | 'stairs'
+  | 'sofa'
+  | 'bed_king'
+  | 'bed_single'
+  | 'wardrobe'
+  | 'dining_table'
+  | 'desk'
+  // Kitchen & Sanitary
   | 'kitchen_counter'
   | 'kitchen_island'
   | 'sink'
   | 'toilet'
   | 'shower'
   | 'bathtub'
-  | 'bed_king'
-  | 'bed_single'
-  | 'wardrobe'
-  | 'sofa'
-  | 'dining_table'
   | 'car'
-  | 'desk';
+  // Commercial & Office
+  | 'executive_desk'
+  | 'conference_table'
+  | 'workstation_cluster'
+  | 'reception_desk'
+  | 'office_chair'
+  // Cafe & Restaurant
+  | 'espresso_bar'
+  | 'dining_booth'
+  | 'bar_counter'
+  | 'restaurant_table'
+  | 'pos_terminal'
+  // Retail & Boutique
+  | 'clothing_rack'
+  | 'display_shelving'
+  | 'checkout_counter'
+  // Clinic & Wellness
+  | 'exam_bed'
+  | 'doctor_desk'
+  | 'waiting_chairs'
+  // Studio & Workshop
+  | 'workbench'
+  | 'storage_racks';
 
 export interface PlotDimensions {
-  width: number; // in meters (or feet if unit is ft)
+  width: number; // in meters
   height: number;
   unit: Unit;
   setbackNorth?: number;
@@ -50,8 +107,8 @@ export interface Opening {
   roomId: string;
   type: OpeningType;
   wall: WallOrientation;
-  offset: number; // Distance from the start corner of that wall in meters
-  width: number; // Width of opening in meters (e.g. 0.9m for standard door, 1.5m for window)
+  offset: number; // in meters
+  width: number; // in meters
   swingDirection?: 'inside' | 'outside' | 'left' | 'right';
 }
 
@@ -60,10 +117,10 @@ export interface Fixture {
   roomId: string;
   type: FixtureType;
   name: string;
-  x: number; // Relative x offset in room (meters)
-  y: number; // Relative y offset in room (meters)
-  width: number; // in meters
-  height: number; // in meters
+  x: number; // offset in meters inside room
+  y: number;
+  width: number;
+  height: number;
   rotation: number; // 0, 90, 180, 270
 }
 
@@ -71,14 +128,12 @@ export interface Room {
   id: string;
   name: string;
   type: RoomType;
-  x: number; // x coordinate on plot in meters
-  y: number; // y coordinate on plot in meters
-  width: number; // width in meters
-  height: number; // height in meters
-  color: string;
+  x: number; // in meters
+  y: number;
+  width: number;
+  height: number;
+  color?: string;
   floorTexture?: 'wood' | 'tile' | 'concrete' | 'carpet' | 'grass' | 'plain';
-  wallColor?: string;
-  wallThickness?: number; // e.g. 0.15m (15cm)
 }
 
 export interface FloorPlanState {
@@ -89,12 +144,13 @@ export interface FloorPlanState {
   fixtures: Fixture[];
   selectedId: string | null;
   selectedType: 'room' | 'opening' | 'fixture' | 'plot' | null;
-  activeTool: 'select' | 'room' | 'wall' | 'door' | 'window' | 'stairs' | 'fixture';
+  activeTool: 'select' | 'room' | 'wall' | 'door' | 'window' | 'stairs' | 'fixture' | 'pan';
+  activeCategory?: SpaceCategory;
   activeRoomPreset?: RoomType;
   activeOpeningPreset?: OpeningType;
   activeFixturePreset?: FixtureType;
   gridSnap: boolean;
-  gridSnapSize: number; // in meters, e.g. 0.1m (10cm) or 0.25m
+  gridSnapSize: number; // 0.1m, 0.25m, 0.5m
   showDimensions: boolean;
   showGrid: boolean;
   zoom: number;

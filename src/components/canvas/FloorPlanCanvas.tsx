@@ -572,10 +572,57 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           )}
 
-          {/* Table */}
-          {fix.type === 'dining_table' && (
+          {/* Table / Conference Table */}
+          {(fix.type === 'dining_table' || fix.type === 'conference_table' || fix.type === 'restaurant_table') && (
             <g stroke="#7f5539" strokeWidth={1}>
-              <rect x={3} y={3} width={w - 6} height={h - 6} rx={3} fill="#b08968" />
+              <rect x={3} y={3} width={w - 6} height={h - 6} rx={4} fill="#b08968" />
+              {/* Chair dots around table */}
+              <circle cx={w / 2} cy={-2} r={3} fill="#7f5539" />
+              <circle cx={w / 2} cy={h + 2} r={3} fill="#7f5539" />
+            </g>
+          )}
+
+          {/* Desks & Workstations */}
+          {(fix.type === 'desk' || fix.type === 'executive_desk' || fix.type === 'doctor_desk' || fix.type === 'workbench') && (
+            <g stroke="#7f5539" strokeWidth={1}>
+              <rect x={2} y={2} width={w - 4} height={h - 4} rx={2} fill="#b08968" />
+              <rect x={w / 3} y={4} width={w / 3} height={6} rx={1} fill="#ffffff" stroke="#c0a080" />
+            </g>
+          )}
+
+          {/* Workstation Pods */}
+          {fix.type === 'workstation_cluster' && (
+            <g stroke="#7f5539" strokeWidth={1}>
+              <line x1={w / 2} y1={2} x2={w / 2} y2={h - 2} stroke="#7f5539" strokeWidth={2} />
+              <line x1={2} y1={h / 2} x2={w - 2} y2={h / 2} stroke="#7f5539" strokeWidth={2} />
+              <rect x={4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
+              <rect x={w / 2 + 4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
+              <rect x={4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
+              <rect x={w / 2 + 4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
+            </g>
+          )}
+
+          {/* Reception Desk / Bar Counter */}
+          {(fix.type === 'reception_desk' || fix.type === 'espresso_bar' || fix.type === 'bar_counter' || fix.type === 'checkout_counter') && (
+            <g stroke="#7f5539" strokeWidth={1}>
+              <rect x={2} y={2} width={w - 4} height={h - 4} rx={3} fill="#b08968" />
+              <rect x={4} y={4} width={w - 8} height={4} fill="#8d7b68" />
+            </g>
+          )}
+
+          {/* Medical Exam Bed */}
+          {fix.type === 'exam_bed' && (
+            <g stroke="#7f5539" strokeWidth={1}>
+              <rect x={2} y={2} width={w - 4} height={h - 4} rx={3} fill="#ffffff" stroke="#0284c7" />
+              <rect x={4} y={4} width={12} height={h - 8} rx={2} fill="#e0f2fe" />
+            </g>
+          )}
+
+          {/* Clothing & Storage Racks */}
+          {(fix.type === 'clothing_rack' || fix.type === 'display_shelving' || fix.type === 'storage_racks') && (
+            <g stroke="#7f5539" strokeWidth={1}>
+              <rect x={2} y={2} width={w - 4} height={h - 4} rx={1} fill="#ded6ce" />
+              <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} stroke="#7f5539" strokeWidth={2} />
             </g>
           )}
 
