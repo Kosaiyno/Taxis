@@ -523,27 +523,102 @@ export const FloorPlanCanvas: React.FC = () => {
       const y = fix.y * SCALE;
       const w = fix.width * SCALE;
       const h = fix.height * SCALE;
+      const geom = fix.geometry || 'rectangle';
 
       return (
         <g
           key={fix.id}
-          transform={`translate(${x}, ${y}) rotate(${fix.rotation}, ${w / 2}, ${h / 2})`}
+          transform={`translate(${x}, ${y}) rotate(${fix.rotation})`}
           onMouseDown={(e) => handleMouseDownFixture(e, fix)}
           className="cursor-grab active:cursor-grabbing group select-none"
         >
-          {/* Main Body */}
-          <rect
-            width={w}
-            height={h}
-            rx={4}
-            fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-            fillOpacity={0.85}
-            stroke={isSelected ? '#a67c52' : '#8d7b68'}
-            strokeWidth={isSelected ? 2.5 : 1.5}
-            className="transition-colors"
-          />
+          {/* 1. Rectangle Base Body (ONLY for rectangle shapes and standard furniture) */}
+          {(geom === 'rectangle' && !['circle', 'l_shape', 'u_shape', 't_shape', 'v_shape'].includes(geom)) && (
+            <rect
+              width={w}
+              height={h}
+              rx={3}
+              fill={isSelected ? '#c99a6e' : (fix.type === 'booth_sponsor' ? '#fef3c7' : '#d5bdaf')}
+              fillOpacity={0.88}
+              stroke={isSelected ? '#a67c52' : '#8d7b68'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+              className="transition-colors"
+            />
+          )}
 
-          {/* Stairs */}
+          {/* 2. Circle / Round Shape */}
+          {geom === 'circle' && (
+            <g stroke={isSelected ? '#a67c52' : '#7f5539'} strokeWidth={isSelected ? 2.5 : 1.5}>
+              <circle
+                cx={w / 2}
+                cy={h / 2}
+                r={Math.min(w, h) / 2 - 2}
+                fill={isSelected ? '#c99a6e' : '#ebd9c3'}
+                fillOpacity={0.9}
+              />
+              {/* Banquet Chairs ONLY if explicitly round_banquet_table */}
+              {fix.type === 'round_banquet_table' &&
+                Array.from({ length: 8 }).map((_, idx) => {
+                  const angle = (idx * 2 * Math.PI) / 8;
+                  const r = Math.min(w, h) / 2 + 3;
+                  return (
+                    <circle
+                      key={idx}
+                      cx={w / 2 + r * Math.cos(angle)}
+                      cy={h / 2 + r * Math.sin(angle)}
+                      r={3}
+                      fill="#7f5539"
+                    />
+                  );
+                })}
+            </g>
+          )}
+
+          {/* 3. L-Shaped Geometry */}
+          {geom === 'l_shape' && (
+            <polygon
+              points={`0,0 ${w},0 ${w},${h * 0.4} ${w * 0.4},${h * 0.4} ${w * 0.4},${h} 0,${h}`}
+              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
+              fillOpacity={0.9}
+              stroke={isSelected ? '#a67c52' : '#7f5539'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+          )}
+
+          {/* 4. U-Shaped Geometry */}
+          {geom === 'u_shape' && (
+            <polygon
+              points={`0,0 ${w * 0.3},0 ${w * 0.3},${h * 0.6} ${w * 0.7},${h * 0.6} ${w * 0.7},0 ${w},0 ${w},${h} 0,${h}`}
+              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
+              fillOpacity={0.9}
+              stroke={isSelected ? '#a67c52' : '#7f5539'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+          )}
+
+          {/* 5. V-Shaped Geometry (Keynote Stages / Angular Booths) */}
+          {geom === 'v_shape' && (
+            <polygon
+              points={`0,0 ${w / 2},${h * 0.3} ${w},0 ${w},${h * 0.4} ${w / 2},${h} 0,${h * 0.4}`}
+              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
+              fillOpacity={0.9}
+              stroke={isSelected ? '#a67c52' : '#7f5539'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+          )}
+
+          {/* 6. T-Shaped Geometry */}
+          {geom === 't_shape' && (
+            <polygon
+              points={`0,0 ${w},0 ${w},${h * 0.35} ${w * 0.65},${h * 0.35} ${w * 0.65},${h} ${w * 0.35},${h} ${w * 0.35},${h * 0.35} 0,${h * 0.35}`}
+              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
+              fillOpacity={0.9}
+              stroke={isSelected ? '#a67c52' : '#7f5539'}
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+          )}
+
+          {/* Specific Interior Fixture Detail Overlays */}
           {fix.type === 'stairs' && (
             <g stroke="#7f5539" strokeWidth={1.2}>
               {Array.from({ length: 8 }).map((_, i) => (
@@ -554,7 +629,6 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           )}
 
-          {/* Sofa */}
           {fix.type === 'sofa' && (
             <g stroke="#7f5539" strokeWidth={1}>
               <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#b08968" />
@@ -563,7 +637,6 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           )}
 
-          {/* Bed */}
           {fix.type.includes('bed') && (
             <g stroke="#7f5539" strokeWidth={1}>
               <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#8d7b68" />
@@ -572,25 +645,6 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           )}
 
-          {/* Table / Conference Table */}
-          {(fix.type === 'dining_table' || fix.type === 'conference_table' || fix.type === 'restaurant_table') && (
-            <g stroke="#7f5539" strokeWidth={1}>
-              <rect x={3} y={3} width={w - 6} height={h - 6} rx={4} fill="#b08968" />
-              {/* Chair dots around table */}
-              <circle cx={w / 2} cy={-2} r={3} fill="#7f5539" />
-              <circle cx={w / 2} cy={h + 2} r={3} fill="#7f5539" />
-            </g>
-          )}
-
-          {/* Desks & Workstations */}
-          {(fix.type === 'desk' || fix.type === 'executive_desk' || fix.type === 'doctor_desk' || fix.type === 'workbench') && (
-            <g stroke="#7f5539" strokeWidth={1}>
-              <rect x={2} y={2} width={w - 4} height={h - 4} rx={2} fill="#b08968" />
-              <rect x={w / 3} y={4} width={w / 3} height={6} rx={1} fill="#ffffff" stroke="#c0a080" />
-            </g>
-          )}
-
-          {/* Workstation Pods */}
           {fix.type === 'workstation_cluster' && (
             <g stroke="#7f5539" strokeWidth={1}>
               <line x1={w / 2} y1={2} x2={w / 2} y2={h - 2} stroke="#7f5539" strokeWidth={2} />
@@ -602,83 +656,11 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           )}
 
-          {/* Circular Shapes & Round Banquet Tables */}
-          {(fix.geometry === 'circle' || fix.type === 'round_banquet_table' || fix.type === 'camera_rig') && (
-            <g stroke="#7f5539" strokeWidth={1.5}>
-              <circle cx={w / 2} cy={h / 2} r={Math.min(w, h) / 2 - 2} fill={isSelected ? '#c99a6e' : '#ebd9c3'} />
-              {/* Banquet Chairs */}
-              {Array.from({ length: 8 }).map((_, idx) => {
-                const angle = (idx * 2 * Math.PI) / 8;
-                const r = Math.min(w, h) / 2 + 3;
-                return (
-                  <circle
-                    key={idx}
-                    cx={w / 2 + r * Math.cos(angle)}
-                    cy={h / 2 + r * Math.sin(angle)}
-                    r={3}
-                    fill="#7f5539"
-                  />
-                );
-              })}
-            </g>
-          )}
-
-          {/* L-Shaped Geometries */}
-          {fix.geometry === 'l_shape' && (
-            <polygon
-              points={`0,0 ${w},0 ${w},${h * 0.4} ${w * 0.4},${h * 0.4} ${w * 0.4},${h} 0,${h}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              stroke="#7f5539"
-              strokeWidth={1.5}
-            />
-          )}
-
-          {/* U-Shaped Geometries */}
-          {fix.geometry === 'u_shape' && (
-            <polygon
-              points={`0,0 ${w * 0.3},0 ${w * 0.3},${h * 0.6} ${w * 0.7},${h * 0.6} ${w * 0.7},0 ${w},0 ${w},${h} 0,${h}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              stroke="#7f5539"
-              strokeWidth={1.5}
-            />
-          )}
-
-          {/* V-Shaped Geometries (Keynote Stages) */}
-          {fix.geometry === 'v_shape' && (
-            <polygon
-              points={`0,0 ${w / 2},${h * 0.3} ${w},0 ${w},${h * 0.4} ${w / 2},${h} 0,${h * 0.4}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              stroke="#7f5539"
-              strokeWidth={1.5}
-            />
-          )}
-
-          {/* T-Shaped Geometries */}
-          {fix.geometry === 't_shape' && (
-            <polygon
-              points={`0,0 ${w},0 ${w},${h * 0.35} ${w * 0.65},${h * 0.35} ${w * 0.65},${h} ${w * 0.35},${h} ${w * 0.35},${h * 0.35} 0,${h * 0.35}`}
-              fill={isSelected ? '#c99a6e' : '#d5bdaf'}
-              stroke="#7f5539"
-              strokeWidth={1.5}
-            />
-          )}
-
-          {/* Exhibition Booths (Standard & Gold Sponsor) */}
           {(fix.type === 'booth_standard' || fix.type === 'booth_sponsor') && (
             <g stroke="#7f5539" strokeWidth={1.5}>
-              <rect x={2} y={2} width={w - 4} height={h - 4} fill={fix.type === 'booth_sponsor' ? '#fef3c7' : '#f5ebe0'} strokeDasharray="4 2" />
               <line x1={2} y1={2} x2={w - 2} y2={2} stroke="#c99a6e" strokeWidth={3} />
               <line x1={2} y1={2} x2={2} y2={h - 2} stroke="#c99a6e" strokeWidth={3} />
               <line x1={w - 2} y1={2} x2={w - 2} y2={h - 2} stroke="#c99a6e" strokeWidth={3} />
-            </g>
-          )}
-
-          {/* Main Keynote Stage */}
-          {fix.type === 'keynote_stage' && (
-            <g stroke="#7f5539" strokeWidth={2}>
-              <rect x={2} y={2} width={w - 4} height={h - 4} rx={4} fill="#292524" />
-              <polygon points={`${w / 2 - 12},${h - 4} ${w / 2 + 12},${h - 4} ${w / 2},${h - 12}`} fill="#c99a6e" />
-              <line x1={6} y1={h - 4} x2={w - 6} y2={h - 4} stroke="#c99a6e" strokeWidth={2} />
             </g>
           )}
 
@@ -689,7 +671,7 @@ export const FloorPlanCanvas: React.FC = () => {
             textAnchor="middle"
             fill="#3d2c1d"
             fontSize="10"
-            fontWeight="600"
+            fontWeight="bold"
             fontFamily="sans-serif"
             className="pointer-events-none"
           >
