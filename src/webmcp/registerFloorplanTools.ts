@@ -1,6 +1,19 @@
 import { useFloorPlanStore } from '../store/floorplanStore';
-import { RoomType, OpeningType, FixtureType, Unit, WallOrientation, Room } from '../types/floorplan';
+import {
+  RoomType,
+  OpeningType,
+  FixtureType,
+  Unit,
+  WallOrientation,
+  Room,
+  Opening,
+  SpaceCategory,
+  FloorPlanMetadata,
+} from '../types/floorplan';
 import { snapToGrid } from '../utils/geometry';
+import { validateFloorplan, getConnectivityGraph } from '../utils/architecturalValidation';
+import { generateSvgBlueprint } from '../utils/exportSvg';
+import { SPACE_CATEGORIES } from '../utils/defaultPresets';
 
 declare global {
   interface ModelContextTool {
@@ -736,24 +749,27 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
   // 17. calculate_plot_compliance
   const calculateComplianceTool: ModelContextTool = {
     name: 'calculate_plot_compliance',
-    description: 'Evaluates zoning coverage ratio (FAR), setback clearances, and egress access.',
+    description:
+      'Evaluates genuine architectural zoning coverage (FAR), distinguishing gross conditioned built footprint from outdoor/landscaping zones (parking, garden, courtyard, patio), and checks setbacks.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
     execute: async () => {
       const state = store();
-      const totalPlot = state.plot.width * state.plot.height;
-      const totalBuilt = state.rooms.reduce((acc, r) => acc + r.width * r.height, 0);
-      const coverage = (totalBuilt / totalPlot) * 100;
-      const isCompliant = coverage <= 60.0;
-
+      const report = validateFloorplan(state);
       return {
-        totalPlotArea: `${totalPlot.toFixed(1)} m²`,
-        totalBuiltArea: `${totalBuilt.toFixed(1)} m²`,
-        coverageRatio: `${coverage.toFixed(1)}%`,
-        maxRecommendedCoverage: '60%',
-        complianceStatus: isCompliant ? 'Compliant' : 'Warning: Exceeds 60% standard plot coverage',
-        roomCount: state.rooms.length,
-        fixturesCount: state.fixtures.length,
+        totalPlotArea: `${report.metrics.plotArea.toFixed(1)} m²`,
+        grossConditionedBuiltArea: `${report.metrics.grossBuiltArea.toFixed(1)} m²`,
+        outdoorLandscapeArea: `${report.metrics.outdoorLandscapeArea.toFixed(1)} m² (parking, garden, patio excluded from built footprint)`,
+        builtCoverageRatio: `${report.metrics.trueBuiltCoverageRatio.toFixed(1)}%`,
+        maxAllowableCoverage: `${report.metrics.maxAllowableCoverageRatio}%`,
+        complianceStatus:
+          report.metrics.trueBuiltCoverageRatio <= report.metrics.maxAllowableCoverageRatio
+            ? 'Compliant with zoning standard'
+            : `Non-compliant: Exceeds ${report.metrics.maxAllowableCoverageRatio}% allowable footprint`,
+        architecturalHealthScore: `${report.score}/100`,
+        summary: report.summary,
+        criticalIssues: report.issues.filter((i) => i.severity === 'error').map((i) => i.message),
+        advisoryWarnings: report.issues.filter((i) => i.severity === 'warning').map((i) => i.message),
       };
     },
   };
@@ -1196,6 +1212,874 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     },
   };
 
+  // 29. delete_door
+  const deleteDoorTool: ModelContextTool = {
+    name: 'delete_door',
+    description:
+      'Deletes a door opening by its exact door ID, or removes doors from a room (optionally filtered by wall).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        door_id: { type: 'string', description: 'Exact ID of the door opening to delete' },
+        room_name_or_id: { type: 'string', description: 'Room name or ID to delete doors from' },
+        wall: { type: 'string', enum: ['north', 'south', 'east', 'west'], description: 'Optional wall filter' },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: { door_id?: string; room_name_or_id?: string; wall?: WallOrientation }) => {
+      const { openings, deleteOpening, rooms } = useFloorPlanStore.getState();
+      if (input.door_id) {
+        const found = openings.find((o) => o.id === input.door_id);
+        if (!found) return { success: false, error: `Door with ID "${input.door_id}" not found.` };
+        deleteOpening(input.door_id);
+        return { success: true, message: `Deleted door ${input.door_id}.` };
+      }
+      if (input.room_name_or_id) {
+        const target = findTargetRoom(rooms, input.room_name_or_id);
+        if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+        const matching = openings.filter(
+          (o) => o.roomId === target.id && o.type.includes('door') && (!input.wall || o.wall === input.wall)
+        );
+        if (matching.length === 0)
+          return { success: false, error: `No matching doors found in room "${target.name}".` };
+        matching.forEach((d) => deleteOpening(d.id));
+        return {
+          success: true,
+          deletedCount: matching.length,
+          message: `Deleted ${matching.length} door(s) from "${target.name}".`,
+        };
+      }
+      return { success: false, error: 'Please specify either door_id or room_name_or_id.' };
+    },
+  };
+
+  // 30. delete_window
+  const deleteWindowTool: ModelContextTool = {
+    name: 'delete_window',
+    description:
+      'Deletes a window opening by its exact window ID, or removes windows from a room (optionally filtered by wall).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        window_id: { type: 'string', description: 'Exact ID of the window to delete' },
+        room_name_or_id: { type: 'string', description: 'Room name or ID to delete windows from' },
+        wall: { type: 'string', enum: ['north', 'south', 'east', 'west'], description: 'Optional wall filter' },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: { window_id?: string; room_name_or_id?: string; wall?: WallOrientation }) => {
+      const { openings, deleteOpening, rooms } = useFloorPlanStore.getState();
+      if (input.window_id) {
+        const found = openings.find((o) => o.id === input.window_id);
+        if (!found) return { success: false, error: `Window with ID "${input.window_id}" not found.` };
+        deleteOpening(input.window_id);
+        return { success: true, message: `Deleted window ${input.window_id}.` };
+      }
+      if (input.room_name_or_id) {
+        const target = findTargetRoom(rooms, input.room_name_or_id);
+        if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+        const matching = openings.filter(
+          (o) => o.roomId === target.id && o.type.includes('window') && (!input.wall || o.wall === input.wall)
+        );
+        if (matching.length === 0)
+          return { success: false, error: `No matching windows found in room "${target.name}".` };
+        matching.forEach((w) => deleteOpening(w.id));
+        return {
+          success: true,
+          deletedCount: matching.length,
+          message: `Deleted ${matching.length} window(s) from "${target.name}".`,
+        };
+      }
+      return { success: false, error: 'Please specify either window_id or room_name_or_id.' };
+    },
+  };
+
+  // 31. delete_opening
+  const deleteOpeningTool: ModelContextTool = {
+    name: 'delete_opening',
+    description: 'Deletes any opening (door or window) by ID, or clears all openings in a specific room.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        opening_id: { type: 'string', description: 'Opening ID' },
+        room_name_or_id: { type: 'string', description: 'Room name or ID' },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: { opening_id?: string; room_name_or_id?: string }) => {
+      const { openings, deleteOpening, rooms } = useFloorPlanStore.getState();
+      if (input.opening_id) {
+        deleteOpening(input.opening_id);
+        return { success: true, message: `Deleted opening ${input.opening_id}.` };
+      }
+      if (input.room_name_or_id) {
+        const target = findTargetRoom(rooms, input.room_name_or_id);
+        if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+        const matching = openings.filter((o) => o.roomId === target.id);
+        matching.forEach((o) => deleteOpening(o.id));
+        return {
+          success: true,
+          deletedCount: matching.length,
+          message: `Deleted ${matching.length} opening(s) from "${target.name}".`,
+        };
+      }
+      return { success: false, error: 'Please provide opening_id or room_name_or_id.' };
+    },
+  };
+
+  // 32. move_door
+  const moveDoorTool: ModelContextTool = {
+    name: 'move_door',
+    description: 'Moves a door along its wall or repositions it to another wall of the same room.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        door_id: { type: 'string', description: 'ID of the door opening' },
+        offset: { type: 'number', description: 'Distance in meters from the wall origin' },
+        new_wall: {
+          type: 'string',
+          enum: ['north', 'south', 'east', 'west'],
+          description: 'Optional new wall to place door on',
+        },
+      },
+      required: ['door_id', 'offset'],
+      additionalProperties: false,
+    },
+    execute: async (input: { door_id: string; offset: number; new_wall?: WallOrientation }) => {
+      const { openings, moveOpening } = useFloorPlanStore.getState();
+      const door = openings.find((o) => o.id === input.door_id);
+      if (!door) return { success: false, error: `Door with ID "${input.door_id}" not found.` };
+      moveOpening(input.door_id, input.offset, input.new_wall);
+      return {
+        success: true,
+        message: `Moved door ${input.door_id} to offset ${input.offset}m${
+          input.new_wall ? ` on ${input.new_wall} wall` : ''
+        }.`,
+      };
+    },
+  };
+
+  // 33. move_window
+  const moveWindowTool: ModelContextTool = {
+    name: 'move_window',
+    description: 'Moves a window along its wall or repositions it to another wall of the same room.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        window_id: { type: 'string', description: 'ID of the window opening' },
+        offset: { type: 'number', description: 'Distance in meters from the wall origin' },
+        new_wall: {
+          type: 'string',
+          enum: ['north', 'south', 'east', 'west'],
+          description: 'Optional new wall to place window on',
+        },
+      },
+      required: ['window_id', 'offset'],
+      additionalProperties: false,
+    },
+    execute: async (input: { window_id: string; offset: number; new_wall?: WallOrientation }) => {
+      const { openings, moveOpening } = useFloorPlanStore.getState();
+      const win = openings.find((o) => o.id === input.window_id);
+      if (!win) return { success: false, error: `Window with ID "${input.window_id}" not found.` };
+      moveOpening(input.window_id, input.offset, input.new_wall);
+      return {
+        success: true,
+        message: `Moved window ${input.window_id} to offset ${input.offset}m${
+          input.new_wall ? ` on ${input.new_wall} wall` : ''
+        }.`,
+      };
+    },
+  };
+
+  // 34. resize_door
+  const resizeDoorTool: ModelContextTool = {
+    name: 'resize_door',
+    description: 'Resizes a door opening width in meters (e.g. 0.8m, 0.9m, 1.2m, 1.8m).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        door_id: { type: 'string', description: 'ID of the door opening' },
+        width: { type: 'number', description: 'New width in meters' },
+      },
+      required: ['door_id', 'width'],
+      additionalProperties: false,
+    },
+    execute: async (input: { door_id: string; width: number }) => {
+      const { openings, resizeOpening } = useFloorPlanStore.getState();
+      const door = openings.find((o) => o.id === input.door_id);
+      if (!door) return { success: false, error: `Door with ID "${input.door_id}" not found.` };
+      resizeOpening(input.door_id, input.width);
+      return { success: true, message: `Resized door ${input.door_id} to ${input.width}m width.` };
+    },
+  };
+
+  // 35. resize_window
+  const resizeWindowTool: ModelContextTool = {
+    name: 'resize_window',
+    description: 'Resizes a window opening width in meters (e.g. 1.2m, 1.8m, 2.4m).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        window_id: { type: 'string', description: 'ID of the window opening' },
+        width: { type: 'number', description: 'New width in meters' },
+      },
+      required: ['window_id', 'width'],
+      additionalProperties: false,
+    },
+    execute: async (input: { window_id: string; width: number }) => {
+      const { openings, resizeOpening } = useFloorPlanStore.getState();
+      const win = openings.find((o) => o.id === input.window_id);
+      if (!win) return { success: false, error: `Window with ID "${input.window_id}" not found.` };
+      resizeOpening(input.window_id, input.width);
+      return { success: true, message: `Resized window ${input.window_id} to ${input.width}m width.` };
+    },
+  };
+
+  // 36. set_door_type
+  const setDoorTypeTool: ModelContextTool = {
+    name: 'set_door_type',
+    description:
+      'Changes the door type (single_door, double_door, sliding_door, pocket_door, bifold_door, opening_archway).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        door_id: { type: 'string', description: 'ID of the door opening' },
+        type: {
+          type: 'string',
+          enum: ['single_door', 'double_door', 'sliding_door', 'pocket_door', 'bifold_door', 'opening_archway'],
+          description: 'New door type',
+        },
+      },
+      required: ['door_id', 'type'],
+      additionalProperties: false,
+    },
+    execute: async (input: { door_id: string; type: OpeningType }) => {
+      const { openings, updateOpening } = useFloorPlanStore.getState();
+      const door = openings.find((o) => o.id === input.door_id);
+      if (!door) return { success: false, error: `Door with ID "${input.door_id}" not found.` };
+      updateOpening(input.door_id, { type: input.type });
+      return { success: true, message: `Changed door ${input.door_id} type to ${input.type}.` };
+    },
+  };
+
+  // 37. clear_redundant_doors
+  const clearRedundantDoorsTool: ModelContextTool = {
+    name: 'clear_redundant_doors',
+    description:
+      'Cleans up duplicate or excessive stacked doors in a room or across the entire floor plan, keeping only clean primary doors.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        room_name_or_id: {
+          type: 'string',
+          description: 'Optional room name or ID. If omitted, cleans across all rooms.',
+        },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: { room_name_or_id?: string }) => {
+      const { rooms, openings, deleteOpening } = useFloorPlanStore.getState();
+      const targetRooms = input.room_name_or_id
+        ? ([findTargetRoom(rooms, input.room_name_or_id)].filter(Boolean) as Room[])
+        : rooms;
+
+      let deletedCount = 0;
+      for (const r of targetRooms) {
+        const rDoors = openings.filter((o) => o.roomId === r.id && o.type.includes('door'));
+        const kept: Opening[] = [];
+        for (const d of rDoors) {
+          const duplicate = kept.find((k) => k.wall === d.wall && Math.abs(k.offset - d.offset) < 0.4);
+          if (duplicate) {
+            deleteOpening(d.id);
+            deletedCount++;
+          } else {
+            kept.push(d);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        deletedCount,
+        message: `Pruned ${deletedCount} redundant door(s). Remaining total openings: ${
+          openings.length - deletedCount
+        }.`,
+      };
+    },
+  };
+
+  // 38. select_element
+  const selectElementTool: ModelContextTool = {
+    name: 'select_element',
+    description:
+      'Selects and highlights a room, fixture, opening, or plot on the canvas and in the right properties panel.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name_or_id: {
+          type: 'string',
+          description:
+            'Name or ID of the element to select. Pass empty string or "none" to clear active selection.',
+        },
+        type: {
+          type: 'string',
+          enum: ['room', 'fixture', 'opening', 'plot'],
+          description: 'Optional element type hint',
+        },
+      },
+      required: ['name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: { name_or_id: string; type?: 'room' | 'fixture' | 'opening' | 'plot' }) => {
+      const { rooms, fixtures, openings, selectItem } = useFloorPlanStore.getState();
+      if (!input.name_or_id || input.name_or_id === 'none' || input.name_or_id === 'clear') {
+        selectItem(null, null);
+        return { success: true, message: 'Cleared active selection.' };
+      }
+      const q = input.name_or_id.toLowerCase();
+      // Search rooms
+      const matchedRoom = rooms.find((r) => r.id === input.name_or_id || r.name.toLowerCase().includes(q));
+      if (matchedRoom && (!input.type || input.type === 'room')) {
+        selectItem(matchedRoom.id, 'room');
+        return { success: true, selected: { id: matchedRoom.id, type: 'room', name: matchedRoom.name } };
+      }
+      // Search fixtures
+      const matchedFix = fixtures.find((f) => f.id === input.name_or_id || f.name.toLowerCase().includes(q));
+      if (matchedFix && (!input.type || input.type === 'fixture')) {
+        selectItem(matchedFix.id, 'fixture');
+        return { success: true, selected: { id: matchedFix.id, type: 'fixture', name: matchedFix.name } };
+      }
+      // Search openings
+      const matchedOp = openings.find((o) => o.id === input.name_or_id);
+      if (matchedOp) {
+        selectItem(matchedOp.id, 'opening');
+        return { success: true, selected: { id: matchedOp.id, type: 'opening', doorType: matchedOp.type } };
+      }
+      return { success: false, error: `No element matching "${input.name_or_id}" found.` };
+    },
+  };
+
+  // 39. get_selected_element
+  const getSelectedElementTool: ModelContextTool = {
+    name: 'get_selected_element',
+    description: 'Returns the element currently selected and highlighted on the canvas.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      if (!state.selectedId || !state.selectedType) {
+        return { selected: null, message: 'No element currently selected.' };
+      }
+      let elementData: any = null;
+      if (state.selectedType === 'room') elementData = state.rooms.find((r) => r.id === state.selectedId);
+      if (state.selectedType === 'fixture') elementData = state.fixtures.find((f) => f.id === state.selectedId);
+      if (state.selectedType === 'opening') elementData = state.openings.find((o) => o.id === state.selectedId);
+      if (state.selectedType === 'plot') elementData = state.plot;
+      return {
+        selected: {
+          id: state.selectedId,
+          type: state.selectedType,
+          data: elementData,
+        },
+      };
+    },
+  };
+
+  // 40. set_archetype
+  const setArchetypeTool: ModelContextTool = {
+    name: 'set_archetype',
+    description:
+      'Switches the active space archetype category (residential, commercial_office, events_exhibition, cafe_restaurant, retail_store, clinic_wellness, studio_workshop).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        archetype: {
+          type: 'string',
+          enum: [
+            'residential',
+            'commercial_office',
+            'events_exhibition',
+            'cafe_restaurant',
+            'retail_store',
+            'clinic_wellness',
+            'studio_workshop',
+          ],
+          description: 'Category of space archetype to activate in the tool palette',
+        },
+      },
+      required: ['archetype'],
+      additionalProperties: false,
+    },
+    execute: async (input: { archetype: SpaceCategory }) => {
+      const { setCategory } = useFloorPlanStore.getState();
+      setCategory(input.archetype);
+      const catObj = SPACE_CATEGORIES.find((c) => c.id === input.archetype);
+      return {
+        success: true,
+        archetype: input.archetype,
+        label: catObj?.label || input.archetype,
+        message: `Switched active space archetype to "${catObj?.label || input.archetype}".`,
+      };
+    },
+  };
+
+  // 41. get_archetypes
+  const getArchetypesTool: ModelContextTool = {
+    name: 'get_archetypes',
+    description: 'Lists all available space archetypes and their descriptions.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const current = useFloorPlanStore.getState().activeCategory || 'residential';
+      return {
+        activeArchetype: current,
+        archetypes: SPACE_CATEGORIES.map((c) => ({
+          id: c.id,
+          label: c.label,
+        })),
+      };
+    },
+  };
+
+  // 42. set_project_name
+  const setProjectNameTool: ModelContextTool = {
+    name: 'set_project_name',
+    description: 'Sets or renames the active architectural project title.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'New project title' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    execute: async (input: { name: string }) => {
+      const { setProjectName } = useFloorPlanStore.getState();
+      setProjectName(input.name);
+      return {
+        success: true,
+        projectName: input.name,
+        message: `Project title updated to "${input.name}".`,
+      };
+    },
+  };
+
+  // 43. set_units
+  const setUnitsTool: ModelContextTool = {
+    name: 'set_units',
+    description: 'Switches the measurement units between meters (m) and feet (ft).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        unit: { type: 'string', enum: ['m', 'ft'], description: 'Measurement unit' },
+      },
+      required: ['unit'],
+      additionalProperties: false,
+    },
+    execute: async (input: { unit: Unit }) => {
+      const { setUnit } = useFloorPlanStore.getState();
+      setUnit(input.unit);
+      return {
+        success: true,
+        unit: input.unit,
+        message: `Measurement units set to "${input.unit === 'm' ? 'Meters (m)' : 'Feet (ft)'}".`,
+      };
+    },
+  };
+
+  // 44. get_units
+  const getUnitsTool: ModelContextTool = {
+    name: 'get_units',
+    description: 'Returns the current measurement unit, grid snap settings, and dimensions display mode.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      return {
+        unit: state.plot.unit,
+        unitLabel: state.plot.unit === 'm' ? 'Meters' : 'Feet',
+        gridSnap: state.gridSnap,
+        gridSnapSize: state.gridSnapSize,
+        showDimensions: state.showDimensions,
+      };
+    },
+  };
+
+  // 45. undo
+  const undoTool: ModelContextTool = {
+    name: 'undo',
+    description: 'Reverses the last spatial action on the canvas.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    execute: async () => {
+      const { undo } = useFloorPlanStore.getState();
+      undo();
+      return { success: true, message: 'Reversed last action.' };
+    },
+  };
+
+  // 46. redo
+  const redoTool: ModelContextTool = {
+    name: 'redo',
+    description: 'Re-applies the last undone spatial action.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    execute: async () => {
+      const { redo } = useFloorPlanStore.getState();
+      redo();
+      return { success: true, message: 'Re-applied undone action.' };
+    },
+  };
+
+  // 47. validate_floorplan
+  const validateFloorplanTool: ModelContextTool = {
+    name: 'validate_floorplan',
+    description:
+      'Performs comprehensive architectural validation: detects room overlaps, out-of-bounds walls, isolated rooms with 0 doors, circulation bottlenecks, excessive openings, and true gross built vs outdoor landscaping coverage.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      const report = validateFloorplan(state);
+      return report;
+    },
+  };
+
+  // 48. get_connectivity_graph
+  const getConnectivityGraphTool: ModelContextTool = {
+    name: 'get_connectivity_graph',
+    description:
+      'Evaluates circulation and doorway connectivity: returns connected room pairs, exterior entrances, isolated rooms, and reachability clusters.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      const graph = getConnectivityGraph(state);
+      return graph;
+    },
+  };
+
+  // 49. calculate_setbacks
+  const calculateSetbacksTool: ModelContextTool = {
+    name: 'calculate_setbacks',
+    description:
+      'Calculates property setback lines (Abuja FCDA / standard setbacks: Front 6m, Rear 3m, Sides 3m) and identifies any building wall encroachments.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        front: { type: 'number', description: 'Front setback in meters (default 6.0m)' },
+        rear: { type: 'number', description: 'Rear setback in meters (default 3.0m)' },
+        east: { type: 'number', description: 'East side setback in meters (default 3.0m)' },
+        west: { type: 'number', description: 'West side setback in meters (default 3.0m)' },
+        jurisdiction: { type: 'string', description: 'Zoning jurisdiction name (e.g. "Abuja FCDA")' },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: {
+      front?: number;
+      rear?: number;
+      east?: number;
+      west?: number;
+      jurisdiction?: string;
+    }) => {
+      const state = useFloorPlanStore.getState();
+      const { plot, rooms } = state;
+      const front = input.front ?? 6.0;
+      const rear = input.rear ?? 3.0;
+      const east = input.east ?? 3.0;
+      const west = input.west ?? 3.0;
+
+      const buildableWidth = Math.max(0, plot.width - (west + east));
+      const buildableHeight = Math.max(0, plot.height - (front + rear));
+      const buildableEnvelopeArea = buildableWidth * buildableHeight;
+
+      const encroachments: string[] = [];
+      for (const r of rooms) {
+        if (['parking', 'garden', 'patio', 'courtyard'].includes(r.type)) continue;
+        if (r.y < front)
+          encroachments.push(`"${r.name}" encroaches ${(front - r.y).toFixed(2)}m into front setback`);
+        if (plot.height - (r.y + r.height) < rear)
+          encroachments.push(`"${r.name}" encroaches into rear setback`);
+        if (r.x < west)
+          encroachments.push(`"${r.name}" encroaches ${(west - r.x).toFixed(2)}m into west setback`);
+        if (plot.width - (r.x + r.width) < east)
+          encroachments.push(`"${r.name}" encroaches into east setback`);
+      }
+
+      return {
+        jurisdiction: input.jurisdiction || 'Abuja FCDA Standard',
+        setbacks: { front: `${front}m`, rear: `${rear}m`, sides: `${west}m / ${east}m` },
+        buildableEnvelope: {
+          width: `${buildableWidth}m`,
+          depth: `${buildableHeight}m`,
+          area: `${buildableEnvelopeArea.toFixed(1)} m²`,
+        },
+        compliant: encroachments.length === 0,
+        encroachments,
+        message:
+          encroachments.length === 0
+            ? `All building structures are cleanly within the ${buildableWidth}m × ${buildableHeight}m buildable envelope.`
+            : `Setback violations detected: ${encroachments.join('; ')}`,
+      };
+    },
+  };
+
+  // 50. center_plot
+  const centerPlotTool: ModelContextTool = {
+    name: 'center_plot',
+    description: 'Centers the plot in the canvas viewport and resets view pan.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    execute: async () => {
+      const { setPan, setZoom } = useFloorPlanStore.getState();
+      setPan({ x: 80, y: 80 });
+      setZoom(1.0);
+      return { success: true, message: 'Centered plot in viewport at 1.0x zoom.' };
+    },
+  };
+
+  // 51. set_zoom
+  const setZoomTool: ModelContextTool = {
+    name: 'set_zoom',
+    description: 'Sets the viewport zoom factor (e.g. 0.5 to 2.5).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        zoom: { type: 'number', description: 'Zoom factor (e.g. 1.0 = 100%, 1.5 = 150%)' },
+      },
+      required: ['zoom'],
+      additionalProperties: false,
+    },
+    execute: async (input: { zoom: number }) => {
+      const { setZoom } = useFloorPlanStore.getState();
+      const z = Math.max(0.3, Math.min(3.0, input.zoom));
+      setZoom(z);
+      return { success: true, zoom: z, message: `Zoom set to ${Math.round(z * 100)}%.` };
+    },
+  };
+
+  // 52. delete_custom_shape
+  const deleteCustomShapeTool: ModelContextTool = {
+    name: 'delete_custom_shape',
+    description: 'Deletes a custom parametric shape entity or site shape from the canvas.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        shape_name_or_id: { type: 'string', description: 'Name or ID of the shape to delete' },
+      },
+      required: ['shape_name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: { shape_name_or_id: string }) => {
+      const { fixtures, deleteFixture } = useFloorPlanStore.getState();
+      const q = input.shape_name_or_id.toLowerCase();
+      const target = fixtures.find((f) => f.id === input.shape_name_or_id || f.name.toLowerCase().includes(q));
+      if (!target) return { success: false, error: `Shape "${input.shape_name_or_id}" not found.` };
+      deleteFixture(target.id);
+      return { success: true, message: `Deleted custom shape "${target.name}".` };
+    },
+  };
+
+  // 53. set_room_type
+  const setRoomTypeTool: ModelContextTool = {
+    name: 'set_room_type',
+    description:
+      'Changes the architectural category/type of a space (e.g. bedroom, master_bedroom, ensuite_bathroom, kitchen, living_room, corridor, bq, parking, garden, office, conference_room, etc.).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        room_name_or_id: { type: 'string', description: 'Name or ID of the room' },
+        new_type: { type: 'string', description: 'New room type identifier' },
+      },
+      required: ['room_name_or_id', 'new_type'],
+      additionalProperties: false,
+    },
+    execute: async (input: { room_name_or_id: string; new_type: RoomType }) => {
+      const { rooms, updateRoom } = useFloorPlanStore.getState();
+      const target = findTargetRoom(rooms, input.room_name_or_id);
+      if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+      updateRoom(target.id, { type: input.new_type });
+      return { success: true, message: `Changed type of "${target.name}" to ${input.new_type}.` };
+    },
+  };
+
+  // 54. set_fixture_position_absolute
+  const setFixturePositionAbsoluteTool: ModelContextTool = {
+    name: 'set_fixture_position_absolute',
+    description:
+      'Sets absolute canvas coordinates (x, y in meters) for any fixture, furniture item, or site shape, decoupling it from relative room offsets.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fixture_name_or_id: { type: 'string', description: 'Name or ID of fixture/shape' },
+        x: { type: 'number', description: 'Absolute X position on plot in meters' },
+        y: { type: 'number', description: 'Absolute Y position on plot in meters' },
+      },
+      required: ['fixture_name_or_id', 'x', 'y'],
+      additionalProperties: false,
+    },
+    execute: async (input: { fixture_name_or_id: string; x: number; y: number }) => {
+      const { fixtures, moveFixture } = useFloorPlanStore.getState();
+      const q = input.fixture_name_or_id.toLowerCase();
+      const target = fixtures.find((f) => f.id === input.fixture_name_or_id || f.name.toLowerCase().includes(q));
+      if (!target) return { success: false, error: `Object "${input.fixture_name_or_id}" not found.` };
+      moveFixture(target.id, input.x, input.y, 'canvas');
+      return {
+        success: true,
+        message: `Positioned "${target.name}" at absolute coordinates (${input.x}m, ${input.y}m).`,
+      };
+    },
+  };
+
+  // 55. set_metadata
+  const setMetadataTool: ModelContextTool = {
+    name: 'set_metadata',
+    description:
+      'Stores project metadata: location, zoning jurisdiction, title deed type (C-of-O), setbacks, approval assumptions, or client notes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'Site address or location (e.g. "Maitama, Abuja")' },
+        zoning_jurisdiction: { type: 'string', description: 'Jurisdiction (e.g. "Abuja FCDA", "Lagos LASPPPA")' },
+        title_type: { type: 'string', description: 'Title deed type (e.g. "C-of-O", "R-of-O", "Freehold")' },
+        setback_north: { type: 'number', description: 'Front setback in meters' },
+        setback_south: { type: 'number', description: 'Rear setback in meters' },
+        setback_east: { type: 'number', description: 'East side setback in meters' },
+        setback_west: { type: 'number', description: 'West side setback in meters' },
+        approval_assumptions: { type: 'string', description: 'Assumptions regarding planning approval' },
+        client_notes: { type: 'string', description: 'Design notes or client preferences' },
+      },
+      additionalProperties: false,
+    },
+    execute: async (input: {
+      location?: string;
+      zoning_jurisdiction?: string;
+      title_type?: string;
+      setback_north?: number;
+      setback_south?: number;
+      setback_east?: number;
+      setback_west?: number;
+      approval_assumptions?: string;
+      client_notes?: string;
+    }) => {
+      const { setMetadata, metadata } = useFloorPlanStore.getState();
+      const updates: Partial<FloorPlanMetadata> = {};
+      if (input.location) updates.location = input.location;
+      if (input.zoning_jurisdiction) updates.zoningJurisdiction = input.zoning_jurisdiction;
+      if (input.title_type) updates.titleType = input.title_type;
+      if (input.approval_assumptions) updates.approvalAssumptions = input.approval_assumptions;
+      if (input.client_notes) updates.clientNotes = input.client_notes;
+
+      if (
+        input.setback_north !== undefined ||
+        input.setback_south !== undefined ||
+        input.setback_east !== undefined ||
+        input.setback_west !== undefined
+      ) {
+        updates.setbacks = {
+          ...(metadata?.setbacks || {}),
+          ...(input.setback_north !== undefined ? { north: input.setback_north } : {}),
+          ...(input.setback_south !== undefined ? { south: input.setback_south } : {}),
+          ...(input.setback_east !== undefined ? { east: input.setback_east } : {}),
+          ...(input.setback_west !== undefined ? { west: input.setback_west } : {}),
+        };
+      }
+
+      setMetadata(updates);
+      return { success: true, updatedMetadata: updates, message: 'Project metadata saved.' };
+    },
+  };
+
+  // 56. get_metadata
+  const getMetadataTool: ModelContextTool = {
+    name: 'get_metadata',
+    description: 'Retrieves current project metadata, setbacks, zoning parameters, and client notes.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      return {
+        projectName: state.projectName,
+        metadata: state.metadata || {},
+      };
+    },
+  };
+
+  // 57. export_project
+  const exportProjectTool: ModelContextTool = {
+    name: 'export_project',
+    description: 'Exports the floor plan project as vector SVG blueprint markup or structured JSON state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        format: {
+          type: 'string',
+          enum: ['svg', 'json'],
+          description: 'Export format: "svg" for vector blueprint markup, "json" for data state',
+        },
+      },
+      required: ['format'],
+      additionalProperties: false,
+    },
+    execute: async (input: { format: 'svg' | 'json' }) => {
+      const state = useFloorPlanStore.getState();
+      if (input.format === 'svg') {
+        const svg = generateSvgBlueprint(state);
+        return {
+          format: 'svg',
+          contentType: 'image/svg+xml',
+          svgContent: svg,
+          message: 'Exported floor plan as vector SVG blueprint.',
+        };
+      }
+      return {
+        format: 'json',
+        data: {
+          projectName: state.projectName,
+          plot: state.plot,
+          rooms: state.rooms,
+          openings: state.openings,
+          fixtures: state.fixtures,
+          metadata: state.metadata,
+        },
+      };
+    },
+  };
+
+  // 58. save_project
+  const saveProjectTool: ModelContextTool = {
+    name: 'save_project',
+    description: 'Saves current floor plan state and returns a verified JSON state snapshot with timestamp.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      return {
+        success: true,
+        timestamp: new Date().toISOString(),
+        projectName: state.projectName,
+        roomsCount: state.rooms.length,
+        openingsCount: state.openings.length,
+        fixturesCount: state.fixtures.length,
+        message: `Project "${state.projectName}" saved successfully.`,
+      };
+    },
+  };
+
+  // 59. render_plan_snapshot
+  const renderPlanSnapshotTool: ModelContextTool = {
+    name: 'render_plan_snapshot',
+    description:
+      'Renders an instant vector SVG blueprint markup snapshot of the canvas layout for visual verification.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const state = useFloorPlanStore.getState();
+      const svg = generateSvgBlueprint(state);
+      return {
+        success: true,
+        svgSnapshot: svg,
+        message: 'Generated SVG blueprint snapshot.',
+      };
+    },
+  };
+
   const allTools = [
     getFloorplanStateTool,
     setPlotDimensionsTool,
@@ -1225,6 +2109,37 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     remodelRoomWallsTool,
     setObjectColorTool,
     setRoomColorTool,
+    deleteDoorTool,
+    deleteWindowTool,
+    deleteOpeningTool,
+    moveDoorTool,
+    moveWindowTool,
+    resizeDoorTool,
+    resizeWindowTool,
+    setDoorTypeTool,
+    clearRedundantDoorsTool,
+    selectElementTool,
+    getSelectedElementTool,
+    setArchetypeTool,
+    getArchetypesTool,
+    setProjectNameTool,
+    setUnitsTool,
+    getUnitsTool,
+    undoTool,
+    redoTool,
+    validateFloorplanTool,
+    getConnectivityGraphTool,
+    calculateSetbacksTool,
+    centerPlotTool,
+    setZoomTool,
+    deleteCustomShapeTool,
+    setRoomTypeTool,
+    setFixturePositionAbsoluteTool,
+    setMetadataTool,
+    getMetadataTool,
+    exportProjectTool,
+    saveProjectTool,
+    renderPlanSnapshotTool,
   ];
 
   // 1. Register with browser native document.modelContext

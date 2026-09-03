@@ -24,15 +24,22 @@ export interface VertexPoint {
 }
 
 export type RoomType =
-  // Residential
+  // Residential & Living
   | 'bedroom'
   | 'master_bedroom'
+  | 'ensuite_bathroom'
   | 'bathroom'
   | 'kitchen'
   | 'living_room'
   | 'dining_room'
-  | 'garage'
+  | 'corridor'
   | 'hallway'
+  | 'bq'
+  | 'garage'
+  | 'parking'
+  | 'garden'
+  | 'courtyard'
+  | 'store'
   | 'balcony'
   | 'patio'
   | 'laundry'
@@ -199,4 +206,19 @@ export interface FloorPlanState {
   zoom: number;
   pan: { x: number; y: number };
   viewMode: '2d' | 'blueprint' | 'color';
+  metadata?: FloorPlanMetadata;
+}
+
+export interface FloorPlanMetadata {
+  location?: string;
+  zoningJurisdiction?: string; // e.g. "Abuja FCDA", "Lagos LASPPPA", "IBC", "UK Planning"
+  titleType?: string; // e.g. "C-of-O", "Freehold", "Leasehold", "R-of-O"
+  setbacks?: {
+    north?: number; // meters (Front setback)
+    south?: number; // meters (Rear setback)
+    east?: number;  // meters (Side setback)
+    west?: number;  // meters (Side setback)
+  };
+  approvalAssumptions?: string;
+  clientNotes?: string;
 }

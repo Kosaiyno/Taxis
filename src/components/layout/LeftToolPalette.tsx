@@ -27,13 +27,15 @@ export const LeftToolPalette: React.FC = () => {
   const {
     rooms,
     selectedId,
+    activeCategory,
+    setCategory,
     addRoom,
     addOpening,
     addFixture,
   } = useFloorPlanStore();
 
   const [activeTab, setActiveTab] = useState<'spaces' | 'shapes' | 'openings' | 'objects'>('spaces');
-  const [selectedCategory, setSelectedCategory] = useState<SpaceCategory>('commercial_office');
+  const selectedCategory = activeCategory || 'residential';
 
   const handleAddRoom = (type: RoomType) => {
     addRoom({ type });
@@ -111,7 +113,7 @@ export const LeftToolPalette: React.FC = () => {
         <div className="relative">
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as SpaceCategory)}
+            onChange={(e) => setCategory(e.target.value as SpaceCategory)}
             className="w-full bg-[#261e1b] border border-[#3d302a] rounded-xl px-3 py-2 text-[#f5ebe0] text-xs font-semibold appearance-none focus:outline-none focus:border-[#c99a6e] cursor-pointer pr-8 shadow-sm transition"
           >
             {SPACE_CATEGORIES.map((cat) => (

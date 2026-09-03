@@ -12,6 +12,8 @@ import {
   Unit,
   ShapeGeometry,
   VertexPoint,
+  SpaceCategory,
+  FloorPlanMetadata,
 } from '../types/floorplan';
 import { DEFAULT_INITIAL_PROJECT, ROOM_PRESETS, OPENING_PRESETS, FIXTURE_PRESETS, getDefaultVerticesForGeometry } from '../utils/defaultPresets';
 import { snapToGrid } from '../utils/geometry';
@@ -23,6 +25,8 @@ interface FloorPlanStore extends FloorPlanState {
   setProjectName: (name: string) => void;
   setPlot: (plotUpdates: Partial<PlotDimensions>) => void;
   setUnit: (unit: Unit) => void;
+  setCategory: (category: SpaceCategory) => void;
+  setMetadata: (meta: Partial<FloorPlanMetadata>) => void;
   
   // Room Actions
   addRoom: (roomData: {
@@ -170,6 +174,13 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
       plot: { ...state.plot, unit },
     }));
   },
+
+  setCategory: (category) => set({ activeCategory: category }),
+
+  setMetadata: (meta) =>
+    set((state) => ({
+      metadata: { ...(state.metadata || {}), ...meta },
+    })),
 
   recordHistory: () => {
     set((state) => pushHistory(state));

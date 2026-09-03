@@ -81,38 +81,82 @@ document.modelContext.registerTool({
 
 ---
 
-## 🛠️ Complete WebMCP Spatial Tool Catalog
+## 🛠️ Complete WebMCP Spatial Tool Suite (59 Tools)
 
-| Category | Tool | Description |
-| :--- | :--- | :--- |
-| **Zoning & State** | `get_floorplan_state` | Reads plot dimensions, all rooms, coordinates, square meterage, and plot coverage |
-| | `set_plot_dimensions` | Configures property boundaries, dimensions, setbacks, and units (m / ft) |
-| | `calculate_plot_compliance` | Evaluates Floor Area Ratio (FAR) and zoning site coverage compliance |
-| | `clear_floorplan` | Clears all zones and elements for a clean drawing board |
-| **Spaces & Walls** | `add_room` | Adds spaces with custom dimensions and automatic non-overlapping placement |
-| | `resize_room` | Precision dimensional resizing (e.g. 5m × 4m) |
-| | `move_room` | Positions spaces directly by coordinates or relative placement (*beside / above / below*) |
-| | `rotate_room` | Rotates space orientation by 90° |
-| | `duplicate_room` | Clones a space and its internal layout |
-| | `delete_room` | Removes a space and attached elements |
-| | `curve_room_walls` | Adjusts outer wall corner curvature radius (0.0m to 3.0m) |
-| | `remodel_room_walls` | Reshapes room walls into custom multi-corner polygons |
-| | `add_room_wall_corner` | Adds a new corner vertex point along the room wall perimeter |
-| | `remove_room_wall_corner` | Removes a wall corner point |
-| | `set_room_color` | Assigns a tint color (hex code or color name) to any space/zone |
-| | `auto_arrange_floorplan` | Intelligent spatial packing algorithm for multiple spaces |
-| **Doors & Windows** | `add_door` | Attaches single, double, sliding, or pocket doors to any wall |
-| | `move_opening` | Slides openings along wall perimeter (360° rotation across all walls) |
-| | `flip_door_swing` | Toggles swing direction between inside and outside |
-| | `add_window` | Places standard, double, or bay windows on any wall |
-| **Shapes & Objects** | `add_fixture` | Places furniture, equipment, booths, stages, or custom geometric entities with optional color |
-| | `set_object_color` | Assigns color/material (hex or named color: emerald, blue, gold, dark, rose, amber, teal) |
-| | `resize_fixture` | Resizes width and height with proportional vertex scaling |
-| | `rotate_fixture` | Rotates objects and shapes in 90° increments |
-| | `update_fixture` | Customizes name, dimensions, color, or geometry shape preset |
-| | `remodel_fixture_shape` | Sets geometric shape: `rectangle`, `circle`, `l_shape`, `u_shape`, `t_shape`, `v_shape`, `polygon` |
-| | `add_fixture_vertex` | Adds a custom polygon corner point for detailed freeform modeling |
-| | `delete_fixture` | Deletes specific objects, shapes, or equipment |
+### 1. Architectural Validation & Connectivity
+| Tool | Description |
+| :--- | :--- |
+| `validate_floorplan` | Evaluates room overlaps, out-of-bounds walls, isolated rooms with 0 doors, circulation bottlenecks, and true gross built vs landscape coverage |
+| `get_connectivity_graph` | Builds topological adjacency and doorway routing graph (accessible paths, exterior entrances, isolated clusters) |
+| `calculate_setbacks` | Evaluates front (6m), rear (3m), and side (3m) setbacks and flags wall encroachments (Abuja FCDA / standard) |
+| `calculate_plot_compliance` | Evaluates gross conditioned built footprint vs open site landscaping, FAR, and zoning limits |
+
+### 2. Doors & Openings (Full Lifecycle)
+| Tool | Description |
+| :--- | :--- |
+| `add_door` | Attaches single, double, sliding, pocket, or bifold door to any wall |
+| `delete_door` | Deletes a door by ID or clears doors in a room (optionally filtered by wall) |
+| `move_door` | Repositions a door along its wall or moves it to another wall |
+| `resize_door` | Changes door opening width in meters (e.g. 0.8m, 0.9m, 1.2m, 1.8m) |
+| `set_door_type` | Updates door type (`single_door`, `double_door`, `sliding_door`, `pocket_door`, `bifold_door`, `opening_archway`) |
+| `flip_door_swing` | Toggles swing direction between inside and outside |
+| `clear_redundant_doors` | Automatically prunes stacked or duplicate doors, restoring clean circulation |
+| `add_window` | Places standard or bay windows on any wall |
+| `delete_window` | Deletes a window by ID or removes windows in a room |
+| `move_window` | Repositions a window along its wall or moves it to another wall |
+| `resize_window` | Changes window width in meters |
+| `delete_opening` | General tool to remove any opening by ID or clear openings in a room |
+
+### 3. Spaces, Walls & Zones
+| Tool | Description |
+| :--- | :--- |
+| `add_room` | Adds a new room with custom dimensions and intelligent non-overlapping placement |
+| `resize_room` | Changes room width and depth with precision |
+| `move_room` | Moves room to exact coordinates or relative placement (*beside / above / below*) |
+| `rotate_room` | Rotates space orientation by 90° |
+| `set_room_type` | Changes architectural type (bedroom, master_bedroom, ensuite_bathroom, corridor, bq, parking, garden, etc.) |
+| `set_room_color` | Assigns an architectural tint color to any room or zone |
+| `curve_room_walls` | Adjusts outer wall corner curvature radius (0.0m sharp to 3.0m curved) |
+| `remodel_room_walls` | Reshapes room walls into custom multi-corner polygons |
+| `add_room_wall_corner` | Adds a new corner vertex point along room wall perimeter |
+| `remove_room_wall_corner`| Removes a corner vertex point |
+| `duplicate_room` | Clones a space and its internal layout |
+| `delete_room` | Deletes a space and attached elements |
+| `auto_arrange_floorplan` | Automatic geometric packing algorithm for multiple spaces |
+
+### 4. Shapes, Objects & Materials
+| Tool | Description |
+| :--- | :--- |
+| `add_fixture` | Places furniture, equipment, or fixtures into a room with optional color |
+| `add_custom_shape` | Adds parametric shape entities (rectangle, circle, L-shape, U-shape, T-shape, V-shape) |
+| `set_object_color` | Assigns color/material (hex or named: emerald, blue, gold, dark, rose, amber, teal, slate) |
+| `set_fixture_position_absolute` | Places site shapes or furniture directly on plot coordinates, decoupling from room offsets |
+| `resize_fixture` | Precision dimensional resizing with vertex scaling |
+| `rotate_fixture` | Rotates objects and shapes in 90° increments |
+| `reshape_object` | Remodels shape geometry, dimensions, rotation, color, or label |
+| `delete_custom_shape` | Dedicated deletion tool for custom shapes and site entities |
+| `delete_fixture` | Deletes specific furniture items or fixtures |
+| `add_fixture_vertex` | Adds a vertex point for freeform polygon remodeling |
+| `batch_create_grid_layout` | Instantly generates matrices of booths, desks, tables, or seats |
+
+### 5. Project State, Selection & Camera
+| Tool | Description |
+| :--- | :--- |
+| `get_floorplan_state` | Complete state inspection: plot size, all rooms, openings, fixtures, areas, coverage |
+| `select_element` | Highlights and selects any room, object, or opening in the UI inspector |
+| `get_selected_element` | Returns data of the currently highlighted element |
+| `set_archetype` | Switches space category (residential, commercial_office, events, cafe, retail, clinic, studio) |
+| `get_archetypes` | Lists all available space archetypes |
+| `set_project_name` | Updates project title |
+| `set_units` / `get_units`| Toggles meters (m) vs feet (ft) and inspects grid settings |
+| `set_metadata` / `get_metadata` | Sets site address, zoning jurisdiction (Abuja FCDA), title type (C-of-O), setbacks, client notes |
+| `center_plot` | Re-centers the plot in the canvas viewport |
+| `set_zoom` | Adjusts zoom factor (e.g. 0.8x, 1.0x, 1.5x) |
+| `undo` / `redo` | Reverses or re-applies spatial actions |
+| `clear_floorplan` | Clears canvas for a clean drafting board |
+| `export_project` | Exports vector SVG blueprint markup or JSON data state |
+| `save_project` | Returns verified JSON state snapshot with timestamp |
+| `render_plan_snapshot` | Returns instant standalone SVG vector blueprint markup string |
 
 ---
 
