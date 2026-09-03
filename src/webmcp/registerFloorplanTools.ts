@@ -123,7 +123,7 @@ export function calculateSmartPlacement(
 }
 
 /**
- * Register all FloorCraft architectural tools with WebMCP (document.modelContext)
+ * Register all Taxis spatial tools with WebMCP (document.modelContext)
  */
 export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
   REGISTERED_WEBMCP_TOOLS.length = 0;

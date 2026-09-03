@@ -1,7 +1,7 @@
-# FloorCraft (WebMCP Floor Plan Designer) — Project Roadmap & Tracker
+# Taxis (Spatial Planning Engine with WebMCP) — Project Roadmap & Tracker
 
 ## 📌 Project Vision
-A crisp, browser-based 2D architectural floor-plan designer for everyday people who bought a plot of land and want to map out room layouts, dimensions (bedrooms, bathrooms, kitchen, garage, stairs, windows/doors) before speaking with an architect.
+A crisp, browser-based 2D spatial design engine where humans and AI agents collaborate to design physical spaces. You design the space yourself, or let your agent handle the tedious spatial work. Both of you can edit the same plan.
 
 **The WebMCP Architecture:**
 ```
@@ -77,7 +77,7 @@ Frontend UI (Canvas/Grid) ──► Shared Structured State ◄── WebMCP Too
 ---
 
 ## 📁 Key Files Index
-- Project Root: `C:\Users\user\.gemini\antigravity\scratch\floorcraft-webmcp`
+- Project Name: Taxis
 - State Store: `src/store/floorplanStore.ts`
 - WebMCP Layer: `src/webmcp/registerFloorplanTools.ts`
 - Canvas Component: `src/components/canvas/FloorPlanCanvas.tsx`
