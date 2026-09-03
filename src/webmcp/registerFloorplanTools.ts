@@ -1013,6 +1013,72 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     },
   };
 
+  // 25. curve_room_walls
+  const curveRoomWallsTool: ModelContextTool = {
+    name: 'curve_room_walls',
+    description:
+      'Sets curved architectural walls or rounded corners for a space/room (radius in meters, 0.0 for sharp to 3.0 for curved).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        room_name_or_id: { type: 'string', description: 'Name or ID of room' },
+        radius: { type: 'number', description: 'Corner radius / curvature in meters (e.g. 0.0 to 3.0)' },
+      },
+      required: ['room_name_or_id', 'radius'],
+      additionalProperties: false,
+    },
+    execute: async (input: { room_name_or_id: string; radius: number }) => {
+      const { rooms, setRoomWallRadius } = useFloorPlanStore.getState();
+      const target = findTargetRoom(rooms, input.room_name_or_id);
+      if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+      setRoomWallRadius(target.id, Math.max(0, input.radius));
+      return {
+        success: true,
+        message: `Set wall curvature radius for ${target.name} to ${input.radius.toFixed(1)}m.`,
+      };
+    },
+  };
+
+  // 26. remodel_room_walls
+  const remodelRoomWallsTool: ModelContextTool = {
+    name: 'remodel_room_walls',
+    description:
+      'Remodels room walls into a custom polygon by specifying exact corner coordinates {x, y} in meters.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        room_name_or_id: { type: 'string', description: 'Name or ID of room' },
+        vertices: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              x: { type: 'number', description: 'Relative X coordinate in meters' },
+              y: { type: 'number', description: 'Relative Y coordinate in meters' },
+            },
+            required: ['x', 'y'],
+          },
+          description: 'Ordered list of polygon wall corner coordinates',
+        },
+      },
+      required: ['room_name_or_id', 'vertices'],
+      additionalProperties: false,
+    },
+    execute: async (input: { room_name_or_id: string; vertices: Array<{ x: number; y: number }> }) => {
+      const { rooms, setRoomVertices } = useFloorPlanStore.getState();
+      const target = findTargetRoom(rooms, input.room_name_or_id);
+      if (!target) return { success: false, error: `Room "${input.room_name_or_id}" not found.` };
+      if (!input.vertices || input.vertices.length < 3) {
+        return { success: false, error: 'A room polygon requires at least 3 wall corner coordinates.' };
+      }
+      setRoomVertices(target.id, input.vertices);
+      return {
+        success: true,
+        message: `Remodeled room walls for ${target.name} with ${input.vertices.length} corners.`,
+      };
+    },
+  };
+
   const allTools = [
     getFloorplanStateTool,
     setPlotDimensionsTool,
@@ -1038,6 +1104,8 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     batchCreateGridLayoutTool,
     remodelPolygonVerticesTool,
     addPolygonVertexTool,
+    curveRoomWallsTool,
+    remodelRoomWallsTool,
   ];
 
   // 1. Register with browser native document.modelContext

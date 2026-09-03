@@ -25,16 +25,31 @@ interface FloorPlanStore extends FloorPlanState {
   setUnit: (unit: Unit) => void;
   
   // Room Actions
-  addRoom: (roomData: { name?: string; type?: RoomType; width?: number; height?: number; x?: number; y?: number; color?: string }) => string;
+  addRoom: (roomData: {
+    name?: string;
+    type?: RoomType;
+    width?: number;
+    height?: number;
+    x?: number;
+    y?: number;
+    color?: string;
+    wallRadius?: number;
+    vertices?: VertexPoint[];
+  }) => string;
   updateRoom: (id: string, updates: Partial<Room>) => void;
   resizeRoom: (idOrName: string, width: number, height: number) => boolean;
   moveRoom: (idOrName: string, x: number, y: number) => boolean;
   rotateRoom: (id: string) => void;
   cloneRoom: (id: string) => string | null;
   deleteRoom: (idOrName: string) => boolean;
+  setRoomWallRadius: (id: string, radius: number) => void;
+  updateRoomVertex: (id: string, vertexIndex: number, newX: number, newY: number) => void;
+  addRoomVertex: (id: string, afterIndex?: number) => void;
+  removeRoomVertex: (id: string, vertexIndex: number) => void;
+  setRoomVertices: (id: string, vertices: VertexPoint[]) => void;
   
   // Opening Actions (Doors & Windows)
-  addOpening: (openingData: { roomId: string; type: OpeningType; wall: WallOrientation; offset?: number; width?: number; swingDirection?: 'inside' | 'outside' | 'left' | 'right' }) => string;
+  addOpening: (openingData: { roomId?: string; type: OpeningType; wall?: WallOrientation; offset?: number; width?: number; swingDirection?: 'inside' | 'outside' | 'left' | 'right' }) => string;
   updateOpening: (id: string, updates: Partial<Opening>) => void;
   moveOpening: (id: string, offset: number, wall?: WallOrientation) => void;
   resizeOpening: (id: string, width: number) => void;
@@ -191,6 +206,8 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
       height,
       color: roomData.color || preset.color,
       floorTexture: preset.floorTexture,
+      wallRadius: roomData.wallRadius ?? 0,
+      vertices: roomData.vertices,
     };
 
     set((state) => {
@@ -210,6 +227,95 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
   updateRoom: (id, updates) => {
     set((state) => {
       const rooms = state.rooms.map((r) => (r.id === id ? { ...r, ...updates } : r));
+      const nextState = { ...state, rooms };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  setRoomWallRadius: (id, radius) => {
+    set((state) => {
+      const rooms = state.rooms.map((r) => (r.id === id ? { ...r, wallRadius: Math.max(0, radius) } : r));
+      const nextState = { ...state, rooms };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  updateRoomVertex: (id, vertexIndex, newX, newY) => {
+    set((state) => {
+      const rooms = state.rooms.map((r) => {
+        if (r.id === id) {
+          const verts = r.vertices
+            ? [...r.vertices]
+            : [
+                { x: 0, y: 0 },
+                { x: r.width, y: 0 },
+                { x: r.width, y: r.height },
+                { x: 0, y: r.height },
+              ];
+          if (verts[vertexIndex]) {
+            verts[vertexIndex] = { x: Math.max(0, snapToGrid(newX, 0.05)), y: Math.max(0, snapToGrid(newY, 0.05)) };
+          }
+          return { ...r, vertices: verts };
+        }
+        return r;
+      });
+      return { rooms };
+    });
+  },
+
+  addRoomVertex: (id, afterIndex) => {
+    set((state) => {
+      const rooms = state.rooms.map((r) => {
+        if (r.id === id) {
+          const verts = r.vertices
+            ? [...r.vertices]
+            : [
+                { x: 0, y: 0 },
+                { x: r.width, y: 0 },
+                { x: r.width, y: r.height },
+                { x: 0, y: r.height },
+              ];
+          const idx = afterIndex !== undefined ? afterIndex : verts.length - 1;
+          const p1 = verts[idx];
+          const p2 = verts[(idx + 1) % verts.length];
+          const newPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+          verts.splice(idx + 1, 0, newPoint);
+          return { ...r, vertices: verts };
+        }
+        return r;
+      });
+      const nextState = { ...state, rooms };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  removeRoomVertex: (id, vertexIndex) => {
+    set((state) => {
+      const rooms = state.rooms.map((r) => {
+        if (r.id === id) {
+          let verts = r.vertices
+            ? [...r.vertices]
+            : [
+                { x: 0, y: 0 },
+                { x: r.width, y: 0 },
+                { x: r.width, y: r.height },
+                { x: 0, y: r.height },
+              ];
+          if (verts.length > 3) {
+            verts = verts.filter((_, i) => i !== vertexIndex);
+          }
+          return { ...r, vertices: verts };
+        }
+        return r;
+      });
+      const nextState = { ...state, rooms };
+      return { ...nextState, ...pushHistory(nextState) };
+    });
+  },
+
+  setRoomVertices: (id, vertices) => {
+    set((state) => {
+      const rooms = state.rooms.map((r) => (r.id === id ? { ...r, vertices } : r));
       const nextState = { ...state, rooms };
       return { ...nextState, ...pushHistory(nextState) };
     });
@@ -299,13 +405,16 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
   addOpening: (openingData) => {
     const id = `op-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const preset = OPENING_PRESETS[openingData.type];
+    const targetRoomId = openingData.roomId || get().selectedId || get().rooms[0]?.id;
+    if (!targetRoomId) return '';
+
     const newOpening: Opening = {
       id,
-      roomId: openingData.roomId,
+      roomId: targetRoomId,
       type: openingData.type,
-      wall: openingData.wall,
+      wall: openingData.wall || 'south',
       offset: openingData.offset ?? 1.0,
-      width: openingData.width ?? preset.defaultWidth,
+      width: openingData.width ?? preset?.defaultWidth ?? 0.9,
       swingDirection: openingData.swingDirection ?? 'inside',
     };
 

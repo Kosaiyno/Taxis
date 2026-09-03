@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useFloorPlanStore } from '../../store/floorplanStore';
-import { Room, Opening, Fixture } from '../../types/floorplan';
+import { Room, Opening, Fixture, WallOrientation } from '../../types/floorplan';
 import { snapToGrid, snapToAdjacentRooms, formatDimension } from '../../utils/geometry';
 import { getDefaultVerticesForGeometry } from '../../utils/defaultPresets';
 
@@ -27,6 +27,13 @@ export const FloorPlanCanvas: React.FC = () => {
     deleteFixture,
     updateFixtureVertex,
     addFixtureVertex,
+    setRoomWallRadius,
+    updateRoomVertex,
+    addRoomVertex,
+    activeTool,
+    activeOpeningPreset,
+    setActiveTool,
+    addOpening,
     deleteOpening,
     rotateRoom,
     cloneRoom,
@@ -67,13 +74,16 @@ export const FloorPlanCanvas: React.FC = () => {
   const [draggingFixtureId, setDraggingFixtureId] = useState<string | null>(null);
   const [dragStartFixturePos, setDragStartFixturePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Vertex Drag Remodeling
+  // Room Vertex Drag Remodeling
+  const [draggingRoomVertex, setDraggingRoomVertex] = useState<{ roomId: string; index: number } | null>(null);
+  const [dragStartRoomVertexPos, setDragStartRoomVertexPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Vertex Drag Remodeling (Fixtures)
   const [draggingVertex, setDraggingVertex] = useState<{ fixtureId: string; index: number } | null>(null);
   const [dragStartVertexPos, setDragStartVertexPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Opening (Door/Window) Drag & Resize
   const [draggingOpeningId, setDraggingOpeningId] = useState<string | null>(null);
-  const [dragStartOpeningOffset, setDragStartOpeningOffset] = useState<number>(0);
 
   const [resizingOpeningId, setResizingOpeningId] = useState<string | null>(null);
   const [resizeOpeningStartWidth, setResizeOpeningStartWidth] = useState<number>(0);
@@ -156,6 +166,17 @@ export const FloorPlanCanvas: React.FC = () => {
     setResizeStartBox({ x: room.x, y: room.y, width: room.width, height: room.height });
   };
 
+  // Room Vertex Drag Handle Start (Curved/Polygon Wall Reshaping)
+  const handleMouseDownRoomVertex = (e: React.MouseEvent | React.TouchEvent, roomId: string, index: number, v: { x: number; y: number }) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingRoomVertex({ roomId, index });
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    setDragStartMouse({ x: clientX, y: clientY });
+    setDragStartRoomVertexPos({ x: v.x, y: v.y });
+  };
+
   // Fixture Drag Start
   const handleMouseDownFixture = (e: React.MouseEvent, fix: Fixture) => {
     e.stopPropagation();
@@ -180,7 +201,6 @@ export const FloorPlanCanvas: React.FC = () => {
     selectItem(op.id, 'opening');
     setDraggingOpeningId(op.id);
     setDragStartMouse({ x: e.clientX, y: e.clientY });
-    setDragStartOpeningOffset(op.offset);
   };
 
   // Opening Resize Width Start
@@ -236,21 +256,66 @@ export const FloorPlanCanvas: React.FC = () => {
       return;
     }
 
-    // 4. Slide Opening Along Wall
+    // 2c. Drag Room Wall Corner Point (Wall Reshaping)
+    if (draggingRoomVertex) {
+      const dx = (e.clientX - dragStartMouse.x) / (SCALE * zoom);
+      const dy = (e.clientY - dragStartMouse.y) / (SCALE * zoom);
+
+      let targetVx = dragStartRoomVertexPos.x + dx;
+      let targetVy = dragStartRoomVertexPos.y + dy;
+
+      if (gridSnap) {
+        targetVx = snapToGrid(targetVx, 0.05);
+        targetVy = snapToGrid(targetVy, 0.05);
+      }
+
+      updateRoomVertex(draggingRoomVertex.roomId, draggingRoomVertex.index, Math.max(0, targetVx), Math.max(0, targetVy));
+      return;
+    }
+
+    // 4. Slide Opening Along Wall (Smooth 360° perimeter sliding across all walls)
     if (draggingOpeningId) {
       const opening = openings.find((o) => o.id === draggingOpeningId);
       const room = rooms.find((r) => r.id === opening?.roomId);
-      if (opening && room) {
-        const isHorizontal = opening.wall === 'north' || opening.wall === 'south';
-        const delta = isHorizontal
-          ? (e.clientX - dragStartMouse.x) / (SCALE * zoom)
-          : (e.clientY - dragStartMouse.y) / (SCALE * zoom);
+      if (opening && room && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const mouseCanvasX = (e.clientX - rect.left - pan.x) / zoom;
+        const mouseCanvasY = (e.clientY - rect.top - pan.y) / zoom;
 
-        let newOffset = dragStartOpeningOffset + delta;
-        const maxOffset = (isHorizontal ? room.width : room.height) - opening.width;
-        newOffset = Math.max(0.1, Math.min(maxOffset, snapToGrid(newOffset, 0.05)));
+        // Relative to room in meters
+        const rx = (mouseCanvasX / SCALE) - room.x;
+        const ry = (mouseCanvasY / SCALE) - room.y;
 
-        moveOpening(draggingOpeningId, newOffset);
+        // Distance to the 4 walls
+        const distNorth = Math.abs(ry);
+        const distSouth = Math.abs(ry - room.height);
+        const distWest = Math.abs(rx);
+        const distEast = Math.abs(rx - room.width);
+
+        const minDist = Math.min(distNorth, distSouth, distWest, distEast);
+
+        let targetWall: WallOrientation = opening.wall;
+        let targetOffset = opening.offset;
+
+        if (minDist === distNorth) {
+          targetWall = 'north';
+          targetOffset = Math.max(0.1, Math.min(room.width - opening.width - 0.1, rx));
+        } else if (minDist === distSouth) {
+          targetWall = 'south';
+          targetOffset = Math.max(0.1, Math.min(room.width - opening.width - 0.1, rx));
+        } else if (minDist === distWest) {
+          targetWall = 'west';
+          targetOffset = Math.max(0.1, Math.min(room.height - opening.width - 0.1, ry));
+        } else {
+          targetWall = 'east';
+          targetOffset = Math.max(0.1, Math.min(room.height - opening.width - 0.1, ry));
+        }
+
+        if (gridSnap) {
+          targetOffset = snapToGrid(targetOffset, 0.05);
+        }
+
+        moveOpening(draggingOpeningId, targetOffset, targetWall);
       }
       return;
     }
@@ -357,6 +422,10 @@ export const FloorPlanCanvas: React.FC = () => {
     }
     if (draggingVertex) {
       setDraggingVertex(null);
+      recordHistory();
+    }
+    if (draggingRoomVertex) {
+      setDraggingRoomVertex(null);
       recordHistory();
     }
     if (draggingOpeningId) {
@@ -712,6 +781,46 @@ export const FloorPlanCanvas: React.FC = () => {
     });
   };
 
+  const touchStartDist = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartDist.current = dist;
+    } else if (e.touches.length === 1) {
+      setIsPanning(true);
+      setStartPanMouse({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      setStartPanOffset({ ...pan });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStartDist.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDist.current;
+      if (Math.abs(factor - 1) > 0.04) {
+        setZoom((prev) => Math.max(0.4, Math.min(3.0, prev * (factor > 1 ? 1.02 : 0.98))));
+        touchStartDist.current = dist;
+      }
+    } else if (e.touches.length === 1 && isPanning) {
+      setPan({
+        x: startPanOffset.x + (e.touches[0].clientX - startPanMouse.x),
+        y: startPanOffset.y + (e.touches[0].clientY - startPanMouse.y),
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartDist.current = null;
+    setIsPanning(false);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -719,7 +828,10 @@ export const FloorPlanCanvas: React.FC = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onWheel={handleWheel}
-      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#fcfbf9] select-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#f8f9fa] dark:bg-[#090d16] select-none touch-none"
     >
       <svg
         className="w-full h-full absolute inset-0"
@@ -808,35 +920,82 @@ export const FloorPlanCanvas: React.FC = () => {
           const w = room.width * SCALE;
           const h = room.height * SCALE;
           const wallThick = 14;
+          const wallRadiusPx = (room.wallRadius ?? 0) * SCALE;
+          const isPoly = room.vertices && room.vertices.length >= 3;
+          const roomVerts = isPoly
+            ? room.vertices!
+            : [
+                { x: 0, y: 0 },
+                { x: room.width, y: 0 },
+                { x: room.width, y: room.height },
+                { x: 0, y: room.height },
+              ];
 
           return (
             <g
               key={room.id}
               transform={`translate(${x}, ${y})`}
-              onMouseDown={(e) => handleMouseDownRoom(e, room)}
-              className="cursor-move"
-            >
-              {/* Room Sandy Brown Floor */}
-              <rect
-                x={0}
-                y={0}
-                width={w}
-                height={h}
-                fill={room.color || '#eddcc9'}
-                stroke="#1e293b"
-                strokeWidth={wallThick}
-                strokeLinejoin="round"
-                className="transition-colors duration-150"
-              />
+              onMouseDown={(e) => {
+                if (activeTool === 'door' || activeTool === 'window') {
+                  e.stopPropagation();
+                  const rect = containerRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    const mouseCanvasX = (e.clientX - rect.left - pan.x) / zoom;
+                    const mouseCanvasY = (e.clientY - rect.top - pan.y) / zoom;
+                    const rx = (mouseCanvasX / SCALE) - room.x;
+                    const ry = (mouseCanvasY / SCALE) - room.y;
+                    const distNorth = Math.abs(ry);
+                    const distSouth = Math.abs(ry - room.height);
+                    const distWest = Math.abs(rx);
+                    const distEast = Math.abs(rx - room.width);
+                    const minDist = Math.min(distNorth, distSouth, distWest, distEast);
 
-              <rect
-                x={wallThick / 2}
-                y={wallThick / 2}
-                width={w - wallThick}
-                height={h - wallThick}
-                fill="url(#woodPlankPattern)"
-                className="pointer-events-none opacity-40"
-              />
+                    let wall: WallOrientation = 'south';
+                    let offset = 1.0;
+                    if (minDist === distNorth) { wall = 'north'; offset = rx; }
+                    else if (minDist === distSouth) { wall = 'south'; offset = rx; }
+                    else if (minDist === distWest) { wall = 'west'; offset = ry; }
+                    else { wall = 'east'; offset = ry; }
+
+                    addOpening({
+                      roomId: room.id,
+                      type: activeOpeningPreset || (activeTool === 'door' ? 'single_door' : 'window'),
+                      wall,
+                      offset: Math.max(0.2, Math.min((wall === 'north' || wall === 'south' ? room.width : room.height) - 1.0, offset)),
+                    });
+                    setActiveTool('select');
+                    return;
+                  }
+                }
+                handleMouseDownRoom(e, room);
+              }}
+              className={activeTool === 'door' || activeTool === 'window' ? 'cursor-pointer' : 'cursor-move'}
+            >
+              {/* Room Floor & Walls (Supports Curved Radius & Polygon Outlines) */}
+              {isPoly ? (
+                <polygon
+                  points={roomVerts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
+                  fill={room.color || '#eddcc9'}
+                  stroke="#1e293b"
+                  strokeWidth={wallThick}
+                  strokeLinejoin="round"
+                  className="transition-colors duration-150"
+                />
+              ) : (
+                <rect
+                  x={0}
+                  y={0}
+                  width={w}
+                  height={h}
+                  rx={wallRadiusPx}
+                  ry={wallRadiusPx}
+                  fill={room.color || '#eddcc9'}
+                  stroke="#1e293b"
+                  strokeWidth={wallThick}
+                  strokeLinejoin="round"
+                  className="transition-colors duration-150"
+                />
+              )}
 
               {/* Selection Halo */}
               {isSelected && (
@@ -845,8 +1004,10 @@ export const FloorPlanCanvas: React.FC = () => {
                   y={-8}
                   width={w + 16}
                   height={h + 16}
+                  rx={wallRadiusPx > 0 ? wallRadiusPx + 8 : 0}
+                  ry={wallRadiusPx > 0 ? wallRadiusPx + 8 : 0}
                   fill="none"
-                  stroke="#a67c52"
+                  stroke="#38bdf8"
                   strokeWidth={2}
                   strokeDasharray="4 4"
                   className="pointer-events-none animate-pulse"
@@ -860,15 +1021,17 @@ export const FloorPlanCanvas: React.FC = () => {
                   y={-14}
                   width={120}
                   height={26}
-                  rx={6}
-                  fill="#261e1b"
-                  opacity={0.88}
+                  rx={8}
+                  fill="#0f172a"
+                  opacity={0.92}
+                  stroke="#334155"
+                  strokeWidth={1}
                 />
                 <text
                   x={0}
                   y={4}
                   textAnchor="middle"
-                  fill="#ffffff"
+                  fill="#f1f5f9"
                   fontSize="11"
                   fontWeight="600"
                   fontFamily="sans-serif"
@@ -885,7 +1048,7 @@ export const FloorPlanCanvas: React.FC = () => {
 
               {/* Wall Dimensions */}
               {showDimensions && (
-                <g fill="#261e1b" fontSize="11" fontFamily="sans-serif" fontWeight="600">
+                <g fill="#475569" fontSize="10" fontFamily="monospace" fontWeight="600">
                   <text x={w / 2} y={-12} textAnchor="middle">
                     {formatDimension(room.width, plot.unit)}
                   </text>
@@ -916,35 +1079,59 @@ export const FloorPlanCanvas: React.FC = () => {
                 <g
                   transform={`translate(${w / 2}, ${-36})`}
                   onClick={(e) => e.stopPropagation()}
-                  className="pointer-events-auto cursor-pointer"
+                  className="pointer-events-auto cursor-pointer select-none"
                 >
-                  <rect x={-60} y={-11} width={120} height={22} rx={6} fill="#261e1b" stroke="#3d302a" />
+                  <rect x={-95} y={-12} width={190} height={24} rx={12} fill="#0f172a" stroke="#334155" opacity={0.96} />
                   <text
-                    x={-38}
+                    x={-68}
                     y={4}
                     textAnchor="middle"
-                    fill="#e6ccb2"
+                    fill="#38bdf8"
+                    fontSize="9"
+                    fontWeight="bold"
+                    className="hover:fill-sky-300"
+                    onClick={() => addRoomVertex(room.id)}
+                  >
+                    +CORNER
+                  </text>
+                  <text
+                    x={-22}
+                    y={4}
+                    textAnchor="middle"
+                    fill="#e2b170"
                     fontSize="9"
                     fontWeight="bold"
                     className="hover:fill-amber-300"
+                    onClick={() => setRoomWallRadius(room.id, (room.wallRadius || 0) > 0 ? 0 : 1.2)}
+                  >
+                    {(room.wallRadius || 0) > 0 ? 'FLAT' : 'CURVE'}
+                  </text>
+                  <text
+                    x={18}
+                    y={4}
+                    textAnchor="middle"
+                    fill="#94a3b8"
+                    fontSize="9"
+                    fontWeight="bold"
+                    className="hover:fill-white"
                     onClick={() => rotateRoom(room.id)}
                   >
-                    ROTATE
+                    ROT
                   </text>
                   <text
-                    x={2}
+                    x={50}
                     y={4}
                     textAnchor="middle"
-                    fill="#e6ccb2"
+                    fill="#94a3b8"
                     fontSize="9"
                     fontWeight="bold"
-                    className="hover:fill-amber-300"
+                    className="hover:fill-white"
                     onClick={() => cloneRoom(room.id)}
                   >
-                    CLONE
+                    COPY
                   </text>
                   <text
-                    x={40}
+                    x={78}
                     y={4}
                     textAnchor="middle"
                     fill="#f87171"
@@ -953,8 +1140,26 @@ export const FloorPlanCanvas: React.FC = () => {
                     className="hover:fill-rose-400"
                     onClick={() => deleteRoom(room.id)}
                   >
-                    DELETE
+                    DEL
                   </text>
+                </g>
+              )}
+
+              {/* Corner Vertex Grab Handles for Direct Wall Reshaping */}
+              {isSelected && (
+                <g className="select-none">
+                  {roomVerts.map((v: { x: number; y: number }, idx: number) => (
+                    <g
+                      key={idx}
+                      className="cursor-crosshair pointer-events-auto"
+                      onMouseDown={(e) => handleMouseDownRoomVertex(e, room.id, idx, v)}
+                      onTouchStart={(e) => handleMouseDownRoomVertex(e, room.id, idx, v)}
+                    >
+                      <circle cx={v.x * SCALE} cy={v.y * SCALE} r={16} fill="transparent" />
+                      <circle cx={v.x * SCALE} cy={v.y * SCALE} r={7.5} fill="#38bdf8" stroke="#ffffff" strokeWidth={2.5} />
+                      <circle cx={v.x * SCALE} cy={v.y * SCALE} r={2.5} fill="#0f172a" />
+                    </g>
+                  ))}
                 </g>
               )}
 

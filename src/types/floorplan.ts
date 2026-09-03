@@ -172,6 +172,8 @@ export interface Room {
   height: number;
   geometry?: ShapeGeometry;
   vertices?: VertexPoint[];
+  wallRadius?: number; // corner rounding in meters (e.g. 0 to 3m)
+  wallCurvature?: { north?: number; south?: number; east?: number; west?: number }; // wall bowing / arc curvature
   color?: string;
   floorTexture?: 'wood' | 'tile' | 'concrete' | 'carpet' | 'grass' | 'plain';
 }

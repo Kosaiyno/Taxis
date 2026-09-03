@@ -57,25 +57,25 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
   return (
     <>
-      <header className="h-12 bg-[#1c1512] border-b border-[#3d302a] px-3 flex items-center justify-between select-none z-30 text-xs text-[#e6ccb2]">
+      <header className="h-14 bg-[#0a0e17]/90 backdrop-blur-2xl border-b border-white/[0.08] px-4 flex items-center justify-between select-none z-30 text-xs text-slate-300">
         {/* Left: TAXIS Branding & Project Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-2 border-r border-[#3d302a]">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c99a6e] to-[#8d7b68] flex items-center justify-center shadow-md text-[#1c1512] font-black text-sm tracking-tighter">
+          <div className="flex items-center gap-2.5 pr-3 border-r border-white/[0.08]">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-black text-sm tracking-tighter">
               TX
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-[#f5ebe0] tracking-wider text-xs font-mono uppercase">
+              <span className="font-extrabold text-slate-100 tracking-wider text-xs font-mono uppercase">
                 TAXIS
               </span>
-              <span className="text-[9px] text-[#b08968] font-sans -mt-0.5">
+              <span className="text-[9px] text-amber-400/90 font-sans font-medium -mt-0.5">
                 Spatial Engine
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-[#4a3b34]">/</span>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-slate-600">/</span>
 
             {isEditingTitle ? (
               <input
@@ -85,30 +85,31 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 onBlur={() => setIsEditingTitle(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
                 autoFocus
-                className="bg-[#261e1b] text-[#f5ebe0] font-semibold px-2 py-0.5 rounded border border-[#c99a6e] focus:outline-none text-xs"
+                className="bg-slate-950 text-slate-100 font-semibold px-2.5 py-1 rounded-xl border border-amber-400/70 focus:outline-none text-xs"
               />
             ) : (
               <button
                 onClick={() => setIsEditingTitle(true)}
-                className="text-[#f5ebe0] hover:text-[#c99a6e] font-semibold px-2 py-1 rounded hover:bg-[#261e1b] transition text-xs"
+                className="text-slate-200 hover:text-white font-medium px-2.5 py-1 rounded-xl hover:bg-white/[0.05] transition text-xs truncate max-w-[140px] md:max-w-[220px]"
               >
                 <span>{projectName}</span>
               </button>
             )}
 
-            <span className="bg-[#261e1b] text-[#b08968] font-mono text-[9px] px-1.5 py-0.5 rounded border border-[#3d302a]">
-              WebMCP Live
+            <span className="bg-emerald-500/10 text-emerald-400 font-mono text-[9px] px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>WebMCP Active</span>
             </span>
           </div>
         </div>
 
         {/* Center: Undo/Redo, Clear, Units */}
-        <div className="flex items-center gap-1.5 bg-[#261e1b]/80 border border-[#3d302a] rounded-lg p-1">
+        <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-1 shadow-sm">
           <button
             onClick={undo}
             disabled={!canUndo}
-            className={`p-1 rounded transition ${
-              canUndo ? 'text-[#e6ccb2] hover:bg-[#3d302a] hover:text-white' : 'text-[#5a4840] cursor-not-allowed'
+            className={`p-1.5 rounded-xl transition ${
+              canUndo ? 'text-slate-300 hover:bg-white/[0.08] hover:text-white' : 'text-slate-600 cursor-not-allowed'
             }`}
             title="Undo (Ctrl+Z)"
           >
@@ -117,45 +118,45 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <button
             onClick={redo}
             disabled={!canRedo}
-            className={`p-1 rounded transition ${
-              canRedo ? 'text-[#e6ccb2] hover:bg-[#3d302a] hover:text-white' : 'text-[#5a4840] cursor-not-allowed'
+            className={`p-1.5 rounded-xl transition ${
+              canRedo ? 'text-slate-300 hover:bg-white/[0.08] hover:text-white' : 'text-slate-600 cursor-not-allowed'
             }`}
             title="Redo (Ctrl+Y)"
           >
             <Redo2 className="w-3.5 h-3.5" />
           </button>
 
-          <div className="h-3.5 w-px bg-[#3d302a]" />
+          <div className="h-3.5 w-px bg-white/[0.08]" />
 
           {/* New / Clear Plan Button */}
           <button
             onClick={() => setShowClearConfirm(true)}
-            className="px-2 py-0.5 text-rose-300 hover:text-rose-200 hover:bg-rose-950/30 rounded font-medium transition flex items-center gap-1 text-[11px]"
+            className="px-2.5 py-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl font-medium transition flex items-center gap-1.5 text-[11px]"
             title="Clear canvas to start from scratch or reset"
           >
             <Trash2 className="w-3 h-3" />
-            <span>Clear / New</span>
+            <span className="hidden md:inline">Clear</span>
           </button>
 
-          <div className="h-3.5 w-px bg-[#3d302a]" />
+          <div className="h-3.5 w-px bg-white/[0.08]" />
 
           {/* Unit Toggle */}
-          <div className="flex bg-[#1c1512] rounded p-0.5 text-[11px]">
+          <div className="flex bg-slate-950/60 rounded-xl p-0.5 text-[10px] font-bold font-mono">
             <button
               onClick={() => setUnit('m')}
-              className={`px-2 py-0.5 rounded font-medium transition ${
-                plot.unit === 'm' ? 'bg-[#c99a6e] text-[#1c1512] font-bold' : 'text-[#b08968]'
+              className={`px-2 py-0.5 rounded-lg transition ${
+                plot.unit === 'm' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              m
+              M
             </button>
             <button
               onClick={() => setUnit('ft')}
-              className={`px-2 py-0.5 rounded font-medium transition ${
-                plot.unit === 'ft' ? 'bg-[#c99a6e] text-[#1c1512] font-bold' : 'text-[#b08968]'
+              className={`px-2 py-0.5 rounded-lg transition ${
+                plot.unit === 'ft' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              ft
+              FT
             </button>
           </div>
         </div>
@@ -164,23 +165,23 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenPlotModal}
-            className="px-2.5 py-1 bg-[#261e1b] hover:bg-[#322723] text-[#e6ccb2] rounded-lg border border-[#3d302a] transition flex items-center gap-1.5"
+            className="hidden sm:flex px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.08] text-slate-200 rounded-xl border border-white/[0.08] transition items-center gap-1.5 text-xs font-medium"
           >
             <LandPlot className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Set Plot</span>
+            <span>Plot</span>
           </button>
 
           <button
             onClick={onOpenExportModal}
-            className="px-3 py-1 bg-[#261e1b] hover:bg-[#322723] text-[#e6ccb2] font-medium rounded-lg border border-[#3d302a] transition flex items-center gap-1.5"
+            className="px-3.5 py-1.5 bg-white/[0.03] hover:bg-white/[0.08] text-slate-200 font-medium rounded-xl border border-white/[0.08] transition flex items-center gap-1.5 text-xs shadow-sm"
           >
-            <Download className="w-3.5 h-3.5 text-[#c99a6e]" />
+            <Download className="w-3.5 h-3.5 text-amber-400" />
             <span>Export</span>
           </button>
 
           <button
             onClick={handleSave}
-            className="px-3.5 py-1 bg-[#c99a6e] hover:bg-[#b08968] text-[#1c1512] font-bold rounded-lg shadow transition flex items-center gap-1.5"
+            className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl shadow-md shadow-amber-400/20 transition flex items-center gap-1.5 text-xs active:scale-95"
           >
             {isSaved ? <Check className="w-3.5 h-3.5" /> : null}
             <span>{isSaved ? 'Saved' : 'Save'}</span>

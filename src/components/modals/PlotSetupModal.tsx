@@ -49,21 +49,21 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#1c1512] border border-[#3d302a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-[#e6ccb2]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#0d121d] border border-white/[0.12] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-slate-300">
         {/* Header */}
-        <div className="p-4 border-b border-[#3d302a] flex items-center justify-between bg-[#15100e]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#c99a6e]/15 border border-[#c99a6e]/30 text-[#c99a6e] flex items-center justify-center">
-              <LandPlot className="w-4 h-4" />
+        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
+              <LandPlot className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#f5ebe0]">Set Land Plot Dimensions</h2>
-              <p className="text-xs text-[#b08968]">Configure your property boundaries</p>
+              <h2 className="text-sm font-bold text-slate-100">Set Land Plot Dimensions</h2>
+              <p className="text-xs text-slate-400">Configure your spatial property boundaries</p>
             </div>
           </div>
 
-          <button onClick={onClose} className="text-[#b08968] hover:text-[#f5ebe0] p-1 rounded-lg hover:bg-[#261e1b] transition">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 p-2 rounded-xl hover:bg-white/[0.06] transition">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -72,7 +72,7 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
         <div className="p-5 space-y-4 overflow-y-auto max-h-[75vh] text-xs custom-scrollbar">
           {/* Presets */}
           <div>
-            <label className="block text-[#b08968] font-semibold mb-2">Common Land Size Presets</label>
+            <label className="block text-slate-400 font-semibold mb-2 text-xs uppercase tracking-wider">Common Land Size Presets</label>
             <div className="grid grid-cols-2 gap-2">
               {PLOT_PRESETS.map((p) => {
                 const isSelected = width === p.width && height === p.height;
@@ -81,14 +81,14 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
                     key={p.name}
                     type="button"
                     onClick={() => handleSelectPreset(p)}
-                    className={`p-2.5 rounded-xl border text-left transition ${
+                    className={`p-3 rounded-2xl border text-left transition ${
                       isSelected
-                        ? 'bg-[#c99a6e]/20 border-[#c99a6e] text-[#f5ebe0]'
-                        : 'bg-[#261e1b] border-[#3d302a] hover:bg-[#322723] text-[#e6ccb2]'
+                        ? 'bg-amber-400/15 border-amber-400 text-slate-100 shadow-md font-bold'
+                        : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] text-slate-300'
                     }`}
                   >
-                    <div className="font-bold text-xs text-[#f5ebe0]">{p.name}</div>
-                    <div className="text-[10px] text-[#b08968] font-mono mt-0.5">{p.desc}</div>
+                    <div className="font-bold text-xs text-slate-100">{p.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">{p.desc}</div>
                   </button>
                 );
               })}
@@ -96,9 +96,9 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
           </div>
 
           {/* Dimension Inputs */}
-          <div className="grid grid-cols-2 gap-4 p-4 bg-[#15100e] rounded-xl border border-[#3d302a]">
+          <div className="grid grid-cols-2 gap-4 p-4 bg-slate-950/60 rounded-2xl border border-white/[0.08]">
             <div>
-              <label className="block text-[#b08968] font-medium mb-1">Plot Width ({unit})</label>
+              <label className="block text-slate-400 font-medium mb-1 text-[11px]">Plot Width ({unit})</label>
               <input
                 type="number"
                 step="0.5"
@@ -106,12 +106,12 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
                 max="100"
                 value={width}
                 onChange={(e) => setWidth(parseFloat(e.target.value) || 5)}
-                className="w-full bg-[#261e1b] border border-[#3d302a] rounded-lg px-3 py-2 text-[#f5ebe0] font-mono text-sm focus:outline-none focus:border-[#c99a6e]"
+                className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-100 font-mono text-sm focus:outline-none focus:border-amber-400/70"
               />
             </div>
 
             <div>
-              <label className="block text-[#b08968] font-medium mb-1">Plot Depth ({unit})</label>
+              <label className="block text-slate-400 font-medium mb-1 text-[11px]">Plot Depth ({unit})</label>
               <input
                 type="number"
                 step="0.5"
@@ -119,13 +119,13 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
                 max="100"
                 value={height}
                 onChange={(e) => setHeight(parseFloat(e.target.value) || 5)}
-                className="w-full bg-[#261e1b] border border-[#3d302a] rounded-lg px-3 py-2 text-[#f5ebe0] font-mono text-sm focus:outline-none focus:border-[#c99a6e]"
+                className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-100 font-mono text-sm focus:outline-none focus:border-amber-400/70"
               />
             </div>
 
-            <div className="col-span-2 flex items-center justify-between pt-2 border-t border-[#3d302a]">
-              <span className="text-[#b08968] font-medium">Total Land Area:</span>
-              <span className="text-sm font-mono font-bold text-[#c99a6e]">
+            <div className="col-span-2 flex items-center justify-between pt-2 border-t border-white/[0.08]">
+              <span className="text-slate-400 font-medium">Total Land Area:</span>
+              <span className="text-sm font-mono font-bold text-amber-400">
                 {formatArea(width * height, unit)}
               </span>
             </div>
@@ -133,13 +133,13 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
 
           {/* Unit Toggle */}
           <div>
-            <label className="block text-[#b08968] font-medium mb-1.5">Measurement Unit</label>
-            <div className="flex bg-[#15100e] p-1 rounded-xl border border-[#3d302a]">
+            <label className="block text-slate-400 font-medium mb-1.5 text-[11px]">Measurement Unit</label>
+            <div className="flex bg-slate-950/60 p-1 rounded-2xl border border-white/[0.08]">
               <button
                 type="button"
                 onClick={() => setLocalUnit('m')}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
-                  unit === 'm' ? 'bg-[#c99a6e] text-[#1c1512]' : 'text-[#b08968]'
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                  unit === 'm' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Meters (m / m²)
@@ -147,8 +147,8 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
               <button
                 type="button"
                 onClick={() => setLocalUnit('ft')}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
-                  unit === 'ft' ? 'bg-[#c99a6e] text-[#1c1512]' : 'text-[#b08968]'
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                  unit === 'ft' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Feet (ft / sq ft)
@@ -158,18 +158,18 @@ export const PlotSetupModal: React.FC<PlotSetupModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#3d302a] flex items-center justify-end gap-2 bg-[#15100e]">
+        <div className="p-4 border-t border-white/[0.08] flex items-center justify-end gap-2 bg-white/[0.02]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-[#b08968] hover:text-[#f5ebe0] text-xs font-medium rounded-lg hover:bg-[#261e1b] transition"
+            className="px-4 py-2 text-slate-400 hover:text-slate-100 text-xs font-medium rounded-xl hover:bg-white/[0.06] transition"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleApply}
-            className="px-5 py-2 bg-[#c99a6e] hover:bg-[#b08968] text-[#1c1512] text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
             <span>Apply Dimensions</span>

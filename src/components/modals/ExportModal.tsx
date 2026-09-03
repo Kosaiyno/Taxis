@@ -17,18 +17,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   const totalBuiltArea = rooms.reduce((acc, r) => acc + r.width * r.height, 0);
 
   const generateSummaryText = () => {
-    return `=== FLOORCRAFT ARCHITECTURAL SUMMARY ===
+    return `=== TAXIS SPATIAL ARCHITECTURAL BLUEPRINT ===
 Project: ${projectName}
 Plot Dimensions: ${plot.width}m × ${plot.height}m (${totalPlotArea.toFixed(1)} m²)
 Total Built Living Area: ${totalBuiltArea.toFixed(1)} m²
 Plot Coverage Ratio: ${((totalBuiltArea / totalPlotArea) * 100).toFixed(1)}%
 
-ROOMS BREAKDOWN (${rooms.length} Total):
+ROOMS & ZONES BREAKDOWN (${rooms.length} Total):
 ${rooms
   .map(
     (r, i) =>
       `${i + 1}. ${r.name} (${r.type})
-   - Dimensions: ${r.width.toFixed(2)}m × ${r.height.toFixed(2)}m
+   - Dimensions: ${r.width.toFixed(2)}m × ${r.height.toFixed(2)}m ${r.wallRadius ? `(Curved: ${r.wallRadius}m radius)` : ''}
    - Area: ${(r.width * r.height).toFixed(2)} m²
    - Coordinates: (${r.x.toFixed(2)}m, ${r.y.toFixed(2)}m)
    - Openings: ${openings.filter((o) => o.roomId === r.id).length} doors/windows
@@ -36,7 +36,7 @@ ${rooms
   )
   .join('\n\n')}
 
-Exported via FloorCraft (WebMCP Architecture)`;
+Generated via TAXIS (WebMCP Spatial Planning Engine)`;
   };
 
   const handleCopySummary = () => {
@@ -47,7 +47,8 @@ Exported via FloorCraft (WebMCP Architecture)`;
 
   const handleDownloadJSON = () => {
     const data = {
-      version: '1.0.0',
+      version: '2.0.0',
+      system: 'TAXIS Spatial Engine',
       exportedAt: new Date().toISOString(),
       projectName,
       plot,
@@ -59,7 +60,7 @@ Exported via FloorCraft (WebMCP Architecture)`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}_floorplan.json`;
+    a.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}_taxis_plan.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -88,43 +89,43 @@ Exported via FloorCraft (WebMCP Architecture)`;
     const img = new Image();
 
     const scale = 2;
-    canvas.width = (plot.width * 60 + 100) * scale;
-    canvas.height = (plot.height * 60 + 100) * scale;
+    const width = svgElem.clientWidth * scale || 1920;
+    const height = svgElem.clientHeight * scale || 1080;
 
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
+    canvas.width = width;
+    canvas.height = height;
 
     img.onload = () => {
       if (ctx) {
-        ctx.fillStyle = '#fcfbf9';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const pngUrl = canvas.toDataURL('image/png');
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
         const a = document.createElement('a');
-        a.href = pngUrl;
-        a.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}_floorplan.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}_blueprint.png`;
         a.click();
-        URL.revokeObjectURL(url);
       }
     };
-    img.src = url;
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#1c1512] border border-[#3d302a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-xs text-[#e6ccb2]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#0d121d] border border-white/[0.12] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-slate-300">
         {/* Header */}
-        <div className="p-4 border-b border-[#3d302a] flex items-center justify-between bg-[#15100e]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#c99a6e]/15 border border-[#c99a6e]/30 text-[#c99a6e] flex items-center justify-center">
-              <Download className="w-4 h-4" />
+        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
+              <Download className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#f5ebe0]">Export Floor Plan</h2>
-              <p className="text-[#b08968]">Download CAD vector blueprints, images, or project files</p>
+              <h2 className="text-sm font-bold text-slate-100">Export Vector Floor Plan</h2>
+              <p className="text-xs text-slate-400">Download CAD blueprints, high-res renders, or project state</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-[#b08968] hover:text-[#f5ebe0] p-1 rounded-lg hover:bg-[#261e1b] transition">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 p-2 rounded-xl hover:bg-white/[0.06] transition">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -135,78 +136,78 @@ Exported via FloorCraft (WebMCP Architecture)`;
             {/* SVG */}
             <button
               onClick={handleDownloadSVG}
-              className="p-3.5 rounded-xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group"
+              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e]">Vector Blueprint (SVG)</div>
-                  <div className="text-[11px] text-[#b08968]">Clean scalable vector for architects and CAD tools</div>
+                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">Vector Blueprint (SVG)</div>
+                  <div className="text-[11px] text-slate-400">Clean scalable vector for architects and CAD software</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-[#b08968] group-hover:text-[#c99a6e]" />
+              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
             </button>
 
             {/* PNG */}
             <button
               onClick={handleDownloadPNG}
-              className="p-3.5 rounded-xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group"
+              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
                   <ImageIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e]">High-Res Image (PNG)</div>
-                  <div className="text-[11px] text-[#b08968]">Crisp image render for presentations or printing</div>
+                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">High-Res Image (PNG)</div>
+                  <div className="text-[11px] text-slate-400">Crisp image render for client presentations and print</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-[#b08968] group-hover:text-[#c99a6e]" />
+              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
             </button>
 
             {/* JSON */}
             <button
               onClick={handleDownloadJSON}
-              className="p-3.5 rounded-xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group"
+              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e]">Project File (JSON)</div>
-                  <div className="text-[11px] text-[#b08968]">Structured state file to reload or share your design</div>
+                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">Project State (JSON)</div>
+                  <div className="text-[11px] text-slate-400">Structured data to share or reload with WebMCP agents</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-[#b08968] group-hover:text-[#c99a6e]" />
+              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
             </button>
           </div>
 
           {/* Copy Summary */}
-          <div className="p-3.5 bg-[#15100e] rounded-xl border border-[#3d302a] space-y-2">
+          <div className="p-4 bg-slate-950/60 rounded-2xl border border-white/[0.08] space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-[#f5ebe0]">Architect Specs Summary</span>
+              <span className="font-bold text-slate-200 text-xs">Architect Specs Summary</span>
               <button
                 onClick={handleCopySummary}
-                className="px-2.5 py-1 bg-[#261e1b] hover:bg-[#322723] text-[#e6ccb2] rounded-md border border-[#3d302a] flex items-center gap-1.5 transition text-[11px]"
+                className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] text-slate-200 rounded-xl border border-white/[0.08] flex items-center gap-1.5 transition text-[11px]"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-[#c99a6e]" /> : <Copy className="w-3.5 h-3.5 text-[#c99a6e]" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
                 <span>{copied ? 'Copied!' : 'Copy Summary'}</span>
               </button>
             </div>
-            <pre className="p-2.5 bg-[#1c1512] rounded-lg text-[10px] font-mono text-[#b08968] overflow-x-auto max-h-32 border border-[#261e1b]">
+            <pre className="p-3 bg-slate-900 rounded-xl text-[10px] font-mono text-slate-300 overflow-x-auto max-h-32 border border-white/[0.06] custom-scrollbar">
               {generateSummaryText()}
             </pre>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#3d302a] flex items-center justify-end bg-[#15100e]">
+        <div className="p-4 border-t border-white/[0.08] flex items-center justify-end bg-white/[0.02]">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-[#261e1b] hover:bg-[#322723] text-[#f5ebe0] font-bold rounded-lg transition"
+            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-100 font-bold rounded-xl border border-white/10 transition text-xs"
           >
             Close
           </button>
