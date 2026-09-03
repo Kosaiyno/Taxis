@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useFloorPlanStore } from '../../store/floorplanStore';
 import { Room, Opening, Fixture, WallOrientation } from '../../types/floorplan';
 import { snapToGrid, snapToAdjacentRooms, formatDimension } from '../../utils/geometry';
@@ -18,6 +18,7 @@ export const FloorPlanCanvas: React.FC = () => {
     selectedType,
     selectItem,
     updateRoom,
+    updateFixture,
     moveOpening,
     resizeOpening,
     flipOpeningSwing,
@@ -70,9 +71,15 @@ export const FloorPlanCanvas: React.FC = () => {
     height: 0,
   });
 
-  // Fixture Drag
+  // Fixture Drag & Resize
   const [draggingFixtureId, setDraggingFixtureId] = useState<string | null>(null);
   const [dragStartFixturePos, setDragStartFixturePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [resizingFixtureId, setResizingFixtureId] = useState<string | null>(null);
+  const [fixtureResizeHandle, setFixtureResizeHandle] = useState<'se' | 'e' | 's' | null>(null);
+  const [resizeFixtureStart, setResizeFixtureStart] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
 
   // Room Vertex Drag Remodeling
   const [draggingRoomVertex, setDraggingRoomVertex] = useState<{ roomId: string; index: number } | null>(null);
@@ -88,18 +95,29 @@ export const FloorPlanCanvas: React.FC = () => {
   const [resizingOpeningId, setResizingOpeningId] = useState<string | null>(null);
   const [resizeOpeningStartWidth, setResizeOpeningStartWidth] = useState<number>(0);
 
-  // Center plot on mount
-  useEffect(() => {
+  // Center main plot in the middle of the viewport
+  const centerPlot = useCallback(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const plotWidthPx = plot.width * SCALE;
-      const plotHeightPx = plot.height * SCALE;
-      setPan({
-        x: (rect.width - plotWidthPx) / 2,
-        y: (rect.height - plotHeightPx) / 2,
-      });
+      if (rect.width > 0 && rect.height > 0) {
+        const plotWidthPx = plot.width * SCALE * zoom;
+        const plotHeightPx = plot.height * SCALE * zoom;
+        setPan({
+          x: Math.round((rect.width - plotWidthPx) / 2),
+          y: Math.round((rect.height - plotHeightPx) / 2),
+        });
+      }
     }
-  }, []);
+  }, [plot.width, plot.height, zoom, setPan]);
+
+  useEffect(() => {
+    const timer = setTimeout(centerPlot, 100);
+    window.addEventListener('resize', centerPlot);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', centerPlot);
+    };
+  }, [centerPlot]);
 
   // Keyboard Shortcuts (Delete, Ctrl+D Duplicate, R Rotate)
   useEffect(() => {
@@ -186,6 +204,20 @@ export const FloorPlanCanvas: React.FC = () => {
     setDragStartFixturePos({ x: fix.x, y: fix.y });
   };
 
+  // Fixture Bounding-Box Resize Handle Start
+  const handleMouseDownFixtureResize = (
+    e: React.MouseEvent,
+    fixtureId: string,
+    handle: 'se' | 'e' | 's',
+    fix: Fixture
+  ) => {
+    e.stopPropagation();
+    setResizingFixtureId(fixtureId);
+    setFixtureResizeHandle(handle);
+    setDragStartMouse({ x: e.clientX, y: e.clientY });
+    setResizeFixtureStart({ width: fix.width, height: fix.height });
+  };
+
   // Vertex Drag Handle Start
   const handleMouseDownVertex = (e: React.MouseEvent, fixtureId: string, index: number, v: { x: number; y: number }) => {
     e.stopPropagation();
@@ -239,7 +271,47 @@ export const FloorPlanCanvas: React.FC = () => {
       return;
     }
 
-    // 2b. Drag Polygon Vertex Point (Remodeling)
+    // 2b. Resize Fixture (Width & Height Scaling)
+    if (resizingFixtureId && fixtureResizeHandle) {
+      const fix = fixtures.find((f) => f.id === resizingFixtureId);
+      if (fix) {
+        const rad = ((fix.rotation || 0) * Math.PI) / 180;
+        const rawDx = (e.clientX - dragStartMouse.x) / (SCALE * zoom);
+        const rawDy = (e.clientY - dragStartMouse.y) / (SCALE * zoom);
+        const localDx = rawDx * Math.cos(rad) + rawDy * Math.sin(rad);
+        const localDy = -rawDx * Math.sin(rad) + rawDy * Math.cos(rad);
+
+        let newW = resizeFixtureStart.width;
+        let newH = resizeFixtureStart.height;
+
+        if (fixtureResizeHandle === 'se' || fixtureResizeHandle === 'e') {
+          newW = Math.max(0.3, resizeFixtureStart.width + localDx);
+        }
+        if (fixtureResizeHandle === 'se' || fixtureResizeHandle === 's') {
+          newH = Math.max(0.3, resizeFixtureStart.height + localDy);
+        }
+
+        if (gridSnap) {
+          newW = snapToGrid(newW, 0.05);
+          newH = snapToGrid(newH, 0.05);
+        }
+
+        const scaleX = fix.width > 0 ? newW / fix.width : 1;
+        const scaleY = fix.height > 0 ? newH / fix.height : 1;
+        const newVerts = fix.vertices
+          ? fix.vertices.map((v) => ({ x: v.x * scaleX, y: v.y * scaleY }))
+          : undefined;
+
+        updateFixture(resizingFixtureId, {
+          width: newW,
+          height: newH,
+          ...(newVerts ? { vertices: newVerts } : {}),
+        });
+      }
+      return;
+    }
+
+    // 2c. Drag Polygon Vertex Point (Remodeling)
     if (draggingVertex) {
       const dx = (e.clientX - dragStartMouse.x) / (SCALE * zoom);
       const dy = (e.clientY - dragStartMouse.y) / (SCALE * zoom);
@@ -418,6 +490,11 @@ export const FloorPlanCanvas: React.FC = () => {
     }
     if (draggingFixtureId) {
       setDraggingFixtureId(null);
+      recordHistory();
+    }
+    if (resizingFixtureId) {
+      setResizingFixtureId(null);
+      setFixtureResizeHandle(null);
       recordHistory();
     }
     if (draggingVertex) {
@@ -682,16 +759,86 @@ export const FloorPlanCanvas: React.FC = () => {
             {fix.name}
           </text>
 
-          {/* Interactive Vertex Corner Handles & Controls */}
+          {/* Interactive Resize Handles, Vertex Corner Points & Controls */}
           {isSelected && (
             <g className="select-none">
-              {/* Corner Vertex Grab Points (Stable, large hit-targets with zero CSS jitter) */}
+              {/* Bounding Box Outline */}
+              <rect
+                x={-3}
+                y={-3}
+                width={w + 6}
+                height={h + 6}
+                fill="none"
+                stroke="#c99a6e"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                className="pointer-events-none"
+              />
+
+              {/* 1. SE Corner (Bottom-Right) Handle - Resizes Width & Height together */}
+              <g
+                className="cursor-nwse-resize pointer-events-auto"
+                onMouseDown={(e) => handleMouseDownFixtureResize(e, fix.id, 'se', fix)}
+              >
+                <circle cx={w} cy={h} r={16} fill="transparent" />
+                <rect
+                  x={w - 6}
+                  y={h - 6}
+                  width={12}
+                  height={12}
+                  rx={2.5}
+                  fill="#c99a6e"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  className="shadow-md"
+                />
+                <circle cx={w} cy={h} r={2} fill="#18110e" />
+              </g>
+
+              {/* 2. East Edge Handle - Resizes Width */}
+              <g
+                className="cursor-ew-resize pointer-events-auto"
+                onMouseDown={(e) => handleMouseDownFixtureResize(e, fix.id, 'e', fix)}
+              >
+                <circle cx={w} cy={h / 2} r={14} fill="transparent" />
+                <rect
+                  x={w - 4}
+                  y={h / 2 - 6}
+                  width={8}
+                  height={12}
+                  rx={2}
+                  fill="#c99a6e"
+                  stroke="#ffffff"
+                  strokeWidth={1.5}
+                />
+              </g>
+
+              {/* 3. South Edge Handle - Resizes Height / Length */}
+              <g
+                className="cursor-ns-resize pointer-events-auto"
+                onMouseDown={(e) => handleMouseDownFixtureResize(e, fix.id, 's', fix)}
+              >
+                <circle cx={w / 2} cy={h} r={14} fill="transparent" />
+                <rect
+                  x={w / 2 - 6}
+                  y={h - 4}
+                  width={12}
+                  height={8}
+                  rx={2}
+                  fill="#c99a6e"
+                  stroke="#ffffff"
+                  strokeWidth={1.5}
+                />
+              </g>
+
+              {/* Corner Vertex Grab Points (Remodeling individual polygon vertices) */}
               {verts.map((v: { x: number; y: number }, idx: number) => (
                 <g
                   key={idx}
                   className="cursor-crosshair pointer-events-auto"
                   onMouseDown={(e) => handleMouseDownVertex(e, fix.id, idx, v)}
                 >
+                  <title>{`Corner Point ${idx + 1} (Drag to remodel)`}</title>
                   {/* Invisible generous hit target (prevents accidental body drag) */}
                   <circle
                     cx={v.x * SCALE}
@@ -703,17 +850,17 @@ export const FloorPlanCanvas: React.FC = () => {
                   <circle
                     cx={v.x * SCALE}
                     cy={v.y * SCALE}
-                    r={7}
-                    fill="#c99a6e"
+                    r={6}
+                    fill="#18110e"
                     stroke="#ffffff"
-                    strokeWidth={2.5}
+                    strokeWidth={2}
                   />
                   {/* Inner center dot */}
                   <circle
                     cx={v.x * SCALE}
                     cy={v.y * SCALE}
-                    r={2.5}
-                    fill="#3d2c1d"
+                    r={2}
+                    fill="#c99a6e"
                   />
                 </g>
               ))}
@@ -831,7 +978,7 @@ export const FloorPlanCanvas: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#f1f3f5] select-none touch-none"
+      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#ffffff] select-none touch-none"
     >
       <svg
         className="w-full h-full absolute inset-0"
@@ -851,20 +998,21 @@ export const FloorPlanCanvas: React.FC = () => {
             <path
               d={`M ${SCALE * 0.25} 0 L 0 0 0 ${SCALE * 0.25}`}
               fill="none"
-              stroke="#e2e8f0"
+              stroke="#e5e7eb"
               strokeWidth="0.75"
             />
           </pattern>
 
-          {/* Crisp 1.0m major drafting grid lines */}
+          {/* Crisp 1.0m major drafting grid lines on pure white */}
           <pattern
             id="gridMajorLight"
             width={SCALE}
             height={SCALE}
             patternUnits="userSpaceOnUse"
           >
+            <rect width={SCALE} height={SCALE} fill="#ffffff" />
             <rect width={SCALE} height={SCALE} fill="url(#gridMinorLight)" />
-            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#94a3b8" strokeWidth="1" />
+            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#cbd5e1" strokeWidth="1" />
           </pattern>
 
           {/* Architectural Floor Grid (50cm tiles in crisp black lines on white inside spaces) */}
@@ -898,49 +1046,40 @@ export const FloorPlanCanvas: React.FC = () => {
           </pattern>
         </defs>
 
-        {/* 1. Background Grid */}
+        {/* 1. Background Grid (Infinite Continuous Drafting Canvas - No Cutoff) */}
         {showGrid && (
           <rect
-            x={-5000}
-            y={-5000}
-            width={10000}
-            height={10000}
+            x={-50000}
+            y={-50000}
+            width={100000}
+            height={100000}
             fill="url(#gridMajorLight)"
             className="pointer-events-none"
           />
         )}
 
-        {/* 2. Land Boundary */}
+        {/* 2. Land Boundary (Main Property Plot Centered In The Middle) */}
         <g className="pointer-events-none">
           <rect
             x={0}
             y={0}
             width={plot.width * SCALE}
             height={plot.height * SCALE}
-            fill="#ffffff"
+            fill="none"
             stroke="#111827"
-            strokeWidth={2}
-            strokeDasharray="6 4"
+            strokeWidth={2.5}
+            strokeDasharray="8 5"
           />
-          {showGrid && (
-            <rect
-              x={0}
-              y={0}
-              width={plot.width * SCALE}
-              height={plot.height * SCALE}
-              fill="url(#gridMajorLight)"
-            />
-          )}
           {showDimensions && (
             <g fill="#111827" fontSize="11" fontFamily="monospace" fontWeight="700">
-              <text x={(plot.width * SCALE) / 2} y={-10} textAnchor="middle">
+              <text x={(plot.width * SCALE) / 2} y={-12} textAnchor="middle">
                 LAND WIDTH: {formatDimension(plot.width, plot.unit)}
               </text>
               <text
-                x={-15}
+                x={-18}
                 y={(plot.height * SCALE) / 2}
                 textAnchor="middle"
-                transform={`rotate(-90, -15, ${(plot.height * SCALE) / 2})`}
+                transform={`rotate(-90, -18, ${(plot.height * SCALE) / 2})`}
               >
                 LAND DEPTH: {formatDimension(plot.height, plot.unit)}
               </text>
@@ -1310,8 +1449,17 @@ export const FloorPlanCanvas: React.FC = () => {
         <button
           onClick={() => setZoom((z) => Math.min(3.0, z + 0.15))}
           className="px-2 py-1 hover:bg-[#3d302a] rounded font-bold"
+          title="Zoom In"
         >
           +
+        </button>
+        <span className="text-[#3d302a] px-0.5">|</span>
+        <button
+          onClick={centerPlot}
+          className="px-2 py-1 hover:bg-[#3d302a] rounded font-sans font-bold text-[10px] text-[#c99a6e] hover:text-[#f5ebe0] transition flex items-center gap-1"
+          title="Center Main Plot in the Middle of Screen"
+        >
+          <span>🎯 Center Plot</span>
         </button>
       </div>
 
