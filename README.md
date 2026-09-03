@@ -61,6 +61,20 @@ Taxis adapts to any physical environment:
 - **🛍️ Retail & Boutiques**: Showroom floors, display shelving, fitting rooms, and checkout counters.
 - **🏥 Wellness & Clinics**: Examination rooms, consultation offices, and patient waiting lounges.
 
+### 🎪 Featured Layout: 500-Attendee Crypto Conference Hall (18m × 28m)
+Planned collaboratively with an AI agent using Taxis's batch grid generation and spatial positioning tools:
+
+<p align="center">
+  <img src="assets/crypto_conference_plan.png" alt="Taxis Crypto Conference Hall Layout (18m x 28m)" width="650" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);" />
+</p>
+
+> **Plan Highlights**:
+> - **Keynote Stage**: 12.0m × 5.0m main presentation stage with LED backdrop and flanking audio towers.
+> - **Dual-Bank Theater Seating**: Symmetric matrices of 100+ attendee seats with central and egress aisles.
+> - **Sponsor Pavilions**: Dedicated 4.5m × 3.5m partner zones (*Ethereum Pavilion* and *Solana Hub*).
+> - **VIP Hospitality**: Private lounge sofas, cocktail high-tops, and dedicated bar counter.
+> - **Event Operations**: Central AV control console and entrance badge registration desk.
+
 ---
 
 ## 🤖 WebMCP Native Implementation
