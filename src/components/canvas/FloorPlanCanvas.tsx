@@ -831,7 +831,7 @@ export const FloorPlanCanvas: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#ffffff] select-none touch-none"
+      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#f1f3f5] select-none touch-none"
     >
       <svg
         className="w-full h-full absolute inset-0"
@@ -841,6 +841,7 @@ export const FloorPlanCanvas: React.FC = () => {
         }}
       >
         <defs>
+          {/* Subtle 0.25m minor grid lines */}
           <pattern
             id="gridMinorLight"
             width={SCALE * 0.25}
@@ -850,11 +851,12 @@ export const FloorPlanCanvas: React.FC = () => {
             <path
               d={`M ${SCALE * 0.25} 0 L 0 0 0 ${SCALE * 0.25}`}
               fill="none"
-              stroke="#f4f4f5"
+              stroke="#e2e8f0"
               strokeWidth="0.75"
             />
           </pattern>
 
+          {/* Crisp 1.0m major drafting grid lines */}
           <pattern
             id="gridMajorLight"
             width={SCALE}
@@ -862,12 +864,37 @@ export const FloorPlanCanvas: React.FC = () => {
             patternUnits="userSpaceOnUse"
           >
             <rect width={SCALE} height={SCALE} fill="url(#gridMinorLight)" />
-            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#e4e4e7" strokeWidth="1" />
+            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#94a3b8" strokeWidth="1" />
           </pattern>
 
-          <pattern id="woodPlankPattern" width="40" height="20" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="20" x2="40" y2="20" stroke="#e4e4e7" strokeWidth="0.5" opacity="0.5" />
-            <line x1="20" y1="0" x2="20" y2="20" stroke="#e4e4e7" strokeWidth="0.5" opacity="0.5" />
+          {/* Architectural Floor Grid (50cm tiles in crisp black lines on white inside spaces) */}
+          <pattern
+            id="archFloorGrid"
+            width={SCALE * 0.5}
+            height={SCALE * 0.5}
+            patternUnits="userSpaceOnUse"
+          >
+            <rect width={SCALE * 0.5} height={SCALE * 0.5} fill="#ffffff" />
+            <path
+              d={`M ${SCALE * 0.5} 0 L 0 0 0 ${SCALE * 0.5}`}
+              fill="none"
+              stroke="#000000"
+              strokeWidth="0.75"
+              strokeOpacity="0.22"
+            />
+          </pattern>
+
+          {/* Architectural Wood Planks (Crisp black plank lines on white inside spaces) */}
+          <pattern id="archWoodPlanks" width={SCALE} height={20} patternUnits="userSpaceOnUse">
+            <rect width={SCALE} height={20} fill="#ffffff" />
+            <line x1="0" y1="20" x2={SCALE} y2="20" stroke="#000000" strokeWidth="0.8" strokeOpacity="0.25" />
+            <line x1={SCALE * 0.5} y1="0" x2={SCALE * 0.5} y2="20" stroke="#000000" strokeWidth="0.6" strokeOpacity="0.2" />
+          </pattern>
+
+          {/* Architectural Hatching (45-degree diagonal lines in black on white inside spaces) */}
+          <pattern id="archHatching" width={16} height={16} patternUnits="userSpaceOnUse">
+            <rect width={16} height={16} fill="#ffffff" />
+            <line x1="0" y1="0" x2="16" y2="16" stroke="#000000" strokeWidth="0.75" strokeOpacity="0.22" />
           </pattern>
         </defs>
 
@@ -895,6 +922,15 @@ export const FloorPlanCanvas: React.FC = () => {
             strokeWidth={2}
             strokeDasharray="6 4"
           />
+          {showGrid && (
+            <rect
+              x={0}
+              y={0}
+              width={plot.width * SCALE}
+              height={plot.height * SCALE}
+              fill="url(#gridMajorLight)"
+            />
+          )}
           {showDimensions && (
             <g fill="#111827" fontSize="11" fontFamily="monospace" fontWeight="700">
               <text x={(plot.width * SCALE) / 2} y={-10} textAnchor="middle">
@@ -930,6 +966,10 @@ export const FloorPlanCanvas: React.FC = () => {
                 { x: room.width, y: room.height },
                 { x: 0, y: room.height },
               ];
+
+          const floorFill = room.floorTexture === 'wood'
+            ? 'url(#archWoodPlanks)'
+            : 'url(#archFloorGrid)';
 
           return (
             <g
@@ -975,7 +1015,7 @@ export const FloorPlanCanvas: React.FC = () => {
               {isPoly ? (
                 <polygon
                   points={roomVerts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
-                  fill="#ffffff"
+                  fill={floorFill}
                   stroke="#111827"
                   strokeWidth={wallThick}
                   strokeLinejoin="round"
@@ -989,7 +1029,7 @@ export const FloorPlanCanvas: React.FC = () => {
                   height={h}
                   rx={wallRadiusPx}
                   ry={wallRadiusPx}
-                  fill="#ffffff"
+                  fill={floorFill}
                   stroke="#111827"
                   strokeWidth={wallThick}
                   strokeLinejoin="round"
