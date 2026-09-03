@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   }, [selectedId]);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0a0e17] text-slate-100 overflow-hidden select-none font-sans">
+    <div className="flex flex-col h-screen w-screen bg-[#15100e] text-[#e6ccb2] overflow-hidden select-none font-sans">
       {/* Top Navbar */}
       <TopNavbar
         onOpenPlotModal={() => setIsPlotModalOpen(true)}
@@ -49,7 +49,7 @@ export const App: React.FC = () => {
           <LeftToolPalette />
         </div>
 
-        {/* Center Canvas */}
+        {/* Center Canvas (White Canvas with B&W Architecture) */}
         <FloorPlanCanvas />
 
         {/* Desktop Right Inspector */}
@@ -57,14 +57,14 @@ export const App: React.FC = () => {
           <RightPropertiesPanel />
         </div>
 
-        {/* Mobile Floating Bottom Dock */}
-        <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-[#0f1420]/90 backdrop-blur-2xl border border-white/[0.12] shadow-2xl p-1.5 rounded-2xl">
+        {/* Mobile Floating Bottom Dock (Espresso Coffee Glassmorphic) */}
+        <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-[#1c1512]/95 backdrop-blur-2xl border border-[#3d302a] shadow-2xl p-1.5 rounded-2xl">
           <button
             onClick={() => setMobileDrawer(mobileDrawer === 'tools' ? null : 'tools')}
             className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
               mobileDrawer === 'tools'
-                ? 'bg-amber-400 text-slate-950 shadow-md font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-white/[0.06]'
+                ? 'bg-[#c99a6e] text-[#1c1512] shadow-md font-bold'
+                : 'text-[#b08968] hover:text-[#f5ebe0] hover:bg-[#261e1b]'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -75,8 +75,8 @@ export const App: React.FC = () => {
             onClick={() => setMobileDrawer(mobileDrawer === 'inspector' ? null : 'inspector')}
             className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
               mobileDrawer === 'inspector'
-                ? 'bg-amber-400 text-slate-950 shadow-md font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-white/[0.06]'
+                ? 'bg-[#c99a6e] text-[#1c1512] shadow-md font-bold'
+                : 'text-[#b08968] hover:text-[#f5ebe0] hover:bg-[#261e1b]'
             }`}
           >
             <Sliders className="w-4 h-4" />
@@ -85,23 +85,23 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => setIsExportModalOpen(true)}
-            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-1.5 transition"
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-[#b08968] hover:text-[#f5ebe0] hover:bg-[#261e1b] flex items-center gap-1.5 transition"
           >
-            <Download className="w-4 h-4 text-amber-400" />
+            <Download className="w-4 h-4 text-[#c99a6e]" />
             <span>Export</span>
           </button>
         </div>
 
         {/* Mobile Slide-Up Drawer Sheet */}
         {mobileDrawer && (
-          <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
-            <div className="bg-[#0d121d] border-t border-white/[0.12] rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
+          <div className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex flex-col justify-end">
+            <div className="bg-[#1c1512] border-t border-[#3d302a] rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
               {/* Drawer Drag Bar & Close Button */}
-              <div className="p-3 border-b border-white/[0.08] flex items-center justify-between">
-                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto" />
+              <div className="p-3 border-b border-[#3d302a] flex items-center justify-between">
+                <div className="w-12 h-1.5 bg-[#4a3b34] rounded-full mx-auto" />
                 <button
                   onClick={() => setMobileDrawer(null)}
-                  className="p-1.5 rounded-xl bg-white/[0.06] text-slate-300 hover:text-white"
+                  className="p-1.5 rounded-xl bg-[#261e1b] text-[#b08968] hover:text-[#f5ebe0]"
                 >
                   <X className="w-4 h-4" />
                 </button>

@@ -488,7 +488,7 @@ export const FloorPlanCanvas: React.FC = () => {
             y={-8}
             width={openingWidthPx}
             height={16}
-            fill={room.color || '#eddcc9'}
+            fill="#ffffff"
             stroke={isSelected ? '#c99a6e' : 'none'}
             strokeWidth={2}
           />
@@ -500,7 +500,7 @@ export const FloorPlanCanvas: React.FC = () => {
                 y1={0}
                 x2={0}
                 y2={op.swingDirection === 'outside' ? -openingWidthPx : openingWidthPx}
-                stroke={isSelected ? '#c99a6e' : '#2b2d42'}
+                stroke={isSelected ? '#c99a6e' : '#111827'}
                 strokeWidth={3}
               />
               <path
@@ -510,17 +510,17 @@ export const FloorPlanCanvas: React.FC = () => {
                     : `M 0 ${openingWidthPx} A ${openingWidthPx} ${openingWidthPx} 0 0 0 ${openingWidthPx} 0`
                 }
                 fill="none"
-                stroke={isSelected ? '#c99a6e' : '#64748b'}
+                stroke={isSelected ? '#c99a6e' : '#111827'}
                 strokeWidth={1.5}
                 strokeDasharray="4 3"
               />
             </g>
           ) : (
             <g>
-              <line x1={0} y1={-3} x2={openingWidthPx} y2={-3} stroke={isSelected ? '#c99a6e' : '#0284c7'} strokeWidth={2} />
-              <line x1={0} y1={3} x2={openingWidthPx} y2={3} stroke={isSelected ? '#c99a6e' : '#0284c7'} strokeWidth={2} />
-              <line x1={0} y1={-8} x2={0} y2={8} stroke="#1e293b" strokeWidth={2} />
-              <line x1={openingWidthPx} y1={-8} x2={openingWidthPx} y2={8} stroke="#1e293b" strokeWidth={2} />
+              <line x1={0} y1={-3} x2={openingWidthPx} y2={-3} stroke={isSelected ? '#c99a6e' : '#111827'} strokeWidth={2} />
+              <line x1={0} y1={3} x2={openingWidthPx} y2={3} stroke={isSelected ? '#c99a6e' : '#111827'} strokeWidth={2} />
+              <line x1={0} y1={-8} x2={0} y2={8} stroke="#111827" strokeWidth={2} />
+              <line x1={openingWidthPx} y1={-8} x2={openingWidthPx} y2={8} stroke="#111827" strokeWidth={2} />
             </g>
           )}
 
@@ -607,64 +607,64 @@ export const FloorPlanCanvas: React.FC = () => {
               cx={w / 2}
               cy={h / 2}
               r={Math.min(w, h) / 2 - 2}
-              fill={isSelected ? '#c99a6e' : '#ebd9c3'}
-              fillOpacity={0.9}
-              stroke={isSelected ? '#a67c52' : '#7f5539'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
+              fill={isSelected ? '#f3f4f6' : '#ffffff'}
+              fillOpacity={1.0}
+              stroke={isSelected ? '#c99a6e' : '#111827'}
+              strokeWidth={isSelected ? 2.5 : 1.8}
             />
           ) : (
             <polygon
               points={verts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
-              fill={isSelected ? '#c99a6e' : (fix.type === 'booth_sponsor' ? '#fef3c7' : '#d5bdaf')}
-              fillOpacity={0.88}
-              stroke={isSelected ? '#a67c52' : '#7f5539'}
-              strokeWidth={isSelected ? 2.5 : 1.5}
+              fill={isSelected ? '#f3f4f6' : '#ffffff'}
+              fillOpacity={1.0}
+              stroke={isSelected ? '#c99a6e' : '#111827'}
+              strokeWidth={isSelected ? 2.5 : 1.8}
             />
           )}
 
           {/* Specific Interior Fixture Detail Overlays */}
           {fix.type === 'stairs' && (
-            <g stroke="#7f5539" strokeWidth={1.2}>
+            <g stroke="#111827" strokeWidth={1.2}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <line key={i} x1={0} y1={(h / 8) * i} x2={w} y2={(h / 8) * i} />
               ))}
-              <line x1={w / 2} y1={h - 10} x2={w / 2} y2={10} stroke="#7f5539" strokeWidth={2} />
-              <polygon points={`${w / 2},5 ${w / 2 - 4},12 ${w / 2 + 4},12`} fill="#7f5539" />
+              <line x1={w / 2} y1={h - 10} x2={w / 2} y2={10} stroke="#111827" strokeWidth={2} />
+              <polygon points={`${w / 2},5 ${w / 2 - 4},12 ${w / 2 + 4},12`} fill="#111827" />
             </g>
           )}
 
           {fix.type === 'sofa' && (
-            <g stroke="#7f5539" strokeWidth={1}>
-              <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#b08968" />
-              <rect x={2} y={2} width={6} height={h - 4} rx={2} fill="#b08968" />
-              <rect x={w - 8} y={2} width={6} height={h - 4} rx={2} fill="#b08968" />
+            <g stroke="#111827" strokeWidth={1.2}>
+              <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#f3f4f6" />
+              <rect x={2} y={2} width={6} height={h - 4} rx={2} fill="#f3f4f6" />
+              <rect x={w - 8} y={2} width={6} height={h - 4} rx={2} fill="#f3f4f6" />
             </g>
           )}
 
           {fix.type.includes('bed') && (
-            <g stroke="#7f5539" strokeWidth={1}>
-              <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#8d7b68" />
-              <rect x={4} y={12} width={w / 2 - 8} height={12} rx={2} fill="#ffffff" stroke="#c0a080" />
-              <rect x={w / 2 + 4} y={12} width={w / 2 - 8} height={12} rx={2} fill="#ffffff" stroke="#c0a080" />
+            <g stroke="#111827" strokeWidth={1.2}>
+              <rect x={2} y={2} width={w - 4} height={8} rx={2} fill="#111827" />
+              <rect x={4} y={12} width={w / 2 - 8} height={12} rx={2} fill="#ffffff" stroke="#111827" />
+              <rect x={w / 2 + 4} y={12} width={w / 2 - 8} height={12} rx={2} fill="#ffffff" stroke="#111827" />
             </g>
           )}
 
           {fix.type === 'workstation_cluster' && (
-            <g stroke="#7f5539" strokeWidth={1}>
-              <line x1={w / 2} y1={2} x2={w / 2} y2={h - 2} stroke="#7f5539" strokeWidth={2} />
-              <line x1={2} y1={h / 2} x2={w - 2} y2={h / 2} stroke="#7f5539" strokeWidth={2} />
-              <rect x={4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
-              <rect x={w / 2 + 4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
-              <rect x={4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
-              <rect x={w / 2 + 4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#b08968" />
+            <g stroke="#111827" strokeWidth={1.2}>
+              <line x1={w / 2} y1={2} x2={w / 2} y2={h - 2} stroke="#111827" strokeWidth={2} />
+              <line x1={2} y1={h / 2} x2={w - 2} y2={h / 2} stroke="#111827" strokeWidth={2} />
+              <rect x={4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#ffffff" stroke="#111827" />
+              <rect x={w / 2 + 4} y={4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#ffffff" stroke="#111827" />
+              <rect x={4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#ffffff" stroke="#111827" />
+              <rect x={w / 2 + 4} y={h / 2 + 4} width={w / 2 - 8} height={h / 2 - 8} rx={2} fill="#ffffff" stroke="#111827" />
             </g>
           )}
 
           {(fix.type === 'booth_standard' || fix.type === 'booth_sponsor') && (
-            <g stroke="#7f5539" strokeWidth={1.5}>
-              <line x1={2} y1={2} x2={w - 2} y2={2} stroke="#c99a6e" strokeWidth={3} />
-              <line x1={2} y1={2} x2={2} y2={h - 2} stroke="#c99a6e" strokeWidth={3} />
-              <line x1={w - 2} y1={2} x2={w - 2} y2={h - 2} stroke="#c99a6e" strokeWidth={3} />
+            <g stroke="#111827" strokeWidth={1.5}>
+              <line x1={2} y1={2} x2={w - 2} y2={2} stroke="#111827" strokeWidth={3} />
+              <line x1={2} y1={2} x2={2} y2={h - 2} stroke="#111827" strokeWidth={3} />
+              <line x1={w - 2} y1={2} x2={w - 2} y2={h - 2} stroke="#111827" strokeWidth={3} />
             </g>
           )}
 
@@ -673,7 +673,7 @@ export const FloorPlanCanvas: React.FC = () => {
             x={w / 2}
             y={h / 2 + 3}
             textAnchor="middle"
-            fill="#3d2c1d"
+            fill="#111827"
             fontSize="10"
             fontWeight="bold"
             fontFamily="sans-serif"
@@ -831,7 +831,7 @@ export const FloorPlanCanvas: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#f8f9fa] dark:bg-[#090d16] select-none touch-none"
+      className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#ffffff] select-none touch-none"
     >
       <svg
         className="w-full h-full absolute inset-0"
@@ -850,7 +850,7 @@ export const FloorPlanCanvas: React.FC = () => {
             <path
               d={`M ${SCALE * 0.25} 0 L 0 0 0 ${SCALE * 0.25}`}
               fill="none"
-              stroke="#f5f0eb"
+              stroke="#f4f4f5"
               strokeWidth="0.75"
             />
           </pattern>
@@ -862,12 +862,12 @@ export const FloorPlanCanvas: React.FC = () => {
             patternUnits="userSpaceOnUse"
           >
             <rect width={SCALE} height={SCALE} fill="url(#gridMinorLight)" />
-            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#e8dfd8" strokeWidth="1" />
+            <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#e4e4e7" strokeWidth="1" />
           </pattern>
 
           <pattern id="woodPlankPattern" width="40" height="20" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="20" x2="40" y2="20" stroke="#d5bdaf" strokeWidth="0.5" opacity="0.35" />
-            <line x1="20" y1="0" x2="20" y2="20" stroke="#d5bdaf" strokeWidth="0.5" opacity="0.35" />
+            <line x1="0" y1="20" x2="40" y2="20" stroke="#e4e4e7" strokeWidth="0.5" opacity="0.5" />
+            <line x1="20" y1="0" x2="20" y2="20" stroke="#e4e4e7" strokeWidth="0.5" opacity="0.5" />
           </pattern>
         </defs>
 
@@ -890,13 +890,13 @@ export const FloorPlanCanvas: React.FC = () => {
             y={0}
             width={plot.width * SCALE}
             height={plot.height * SCALE}
-            fill="#a67c5205"
-            stroke="#a67c52"
-            strokeWidth={1.5}
+            fill="#ffffff"
+            stroke="#111827"
+            strokeWidth={2}
             strokeDasharray="6 4"
           />
           {showDimensions && (
-            <g fill="#a67c52" fontSize="11" fontFamily="monospace" fontWeight="600">
+            <g fill="#111827" fontSize="11" fontFamily="monospace" fontWeight="700">
               <text x={(plot.width * SCALE) / 2} y={-10} textAnchor="middle">
                 LAND WIDTH: {formatDimension(plot.width, plot.unit)}
               </text>
@@ -975,8 +975,8 @@ export const FloorPlanCanvas: React.FC = () => {
               {isPoly ? (
                 <polygon
                   points={roomVerts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
-                  fill={room.color || '#eddcc9'}
-                  stroke="#1e293b"
+                  fill="#ffffff"
+                  stroke="#111827"
                   strokeWidth={wallThick}
                   strokeLinejoin="round"
                   className="transition-colors duration-150"
@@ -989,8 +989,8 @@ export const FloorPlanCanvas: React.FC = () => {
                   height={h}
                   rx={wallRadiusPx}
                   ry={wallRadiusPx}
-                  fill={room.color || '#eddcc9'}
-                  stroke="#1e293b"
+                  fill="#ffffff"
+                  stroke="#111827"
                   strokeWidth={wallThick}
                   strokeLinejoin="round"
                   className="transition-colors duration-150"
@@ -1007,8 +1007,8 @@ export const FloorPlanCanvas: React.FC = () => {
                   rx={wallRadiusPx > 0 ? wallRadiusPx + 8 : 0}
                   ry={wallRadiusPx > 0 ? wallRadiusPx + 8 : 0}
                   fill="none"
-                  stroke="#38bdf8"
-                  strokeWidth={2}
+                  stroke="#c99a6e"
+                  strokeWidth={2.5}
                   strokeDasharray="4 4"
                   className="pointer-events-none animate-pulse"
                 />
@@ -1022,18 +1022,18 @@ export const FloorPlanCanvas: React.FC = () => {
                   width={120}
                   height={26}
                   rx={8}
-                  fill="#0f172a"
-                  opacity={0.92}
-                  stroke="#334155"
-                  strokeWidth={1}
+                  fill="#ffffff"
+                  opacity={0.98}
+                  stroke="#111827"
+                  strokeWidth={1.5}
                 />
                 <text
                   x={0}
                   y={4}
                   textAnchor="middle"
-                  fill="#f1f5f9"
+                  fill="#111827"
                   fontSize="11"
-                  fontWeight="600"
+                  fontWeight="700"
                   fontFamily="sans-serif"
                 >
                   {room.name}
@@ -1048,7 +1048,7 @@ export const FloorPlanCanvas: React.FC = () => {
 
               {/* Wall Dimensions */}
               {showDimensions && (
-                <g fill="#475569" fontSize="10" fontFamily="monospace" fontWeight="600">
+                <g fill="#111827" fontSize="10" fontFamily="monospace" fontWeight="700">
                   <text x={w / 2} y={-12} textAnchor="middle">
                     {formatDimension(room.width, plot.unit)}
                   </text>
@@ -1081,7 +1081,7 @@ export const FloorPlanCanvas: React.FC = () => {
                   onClick={(e) => e.stopPropagation()}
                   className="pointer-events-auto cursor-pointer select-none"
                 >
-                  <rect x={-95} y={-12} width={190} height={24} rx={12} fill="#0f172a" stroke="#334155" opacity={0.96} />
+                  <rect x={-95} y={-12} width={190} height={24} rx={12} fill="#1c1512" stroke="#3d302a" opacity={0.96} />
                   <text
                     x={-68}
                     y={4}
@@ -1276,9 +1276,9 @@ export const FloorPlanCanvas: React.FC = () => {
       </div>
 
       {/* Minimap (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 w-36 h-28 bg-[#fcfbf9]/95 backdrop-blur rounded-xl border-2 border-[#d5bdaf] shadow-xl overflow-hidden pointer-events-none p-1.5 flex items-center justify-center">
+      <div className="absolute bottom-4 right-4 w-36 h-28 bg-[#ffffff]/95 backdrop-blur rounded-xl border border-slate-300 shadow-xl overflow-hidden pointer-events-none p-1.5 flex items-center justify-center">
         <svg viewBox="0 0 16 14" className="w-full h-full">
-          <rect x="0" y="0" width="16" height="14" fill="#f5ebe0" stroke="#d5bdaf" strokeWidth="0.5" />
+          <rect x="0" y="0" width="16" height="14" fill="#fafafa" stroke="#e4e4e7" strokeWidth="0.5" />
           {rooms.map((r) => (
             <rect
               key={r.id}
@@ -1286,9 +1286,9 @@ export const FloorPlanCanvas: React.FC = () => {
               y={r.y}
               width={r.width}
               height={r.height}
-              fill="#c99a6e"
-              stroke="#261e1b"
-              strokeWidth="0.4"
+              fill="#ffffff"
+              stroke="#111827"
+              strokeWidth="0.8"
             />
           ))}
         </svg>

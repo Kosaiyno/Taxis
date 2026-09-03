@@ -49,17 +49,17 @@ export const RightPropertiesPanel: React.FC = () => {
   const coverageRatio = plotArea > 0 ? (totalBuiltArea / plotArea) * 100 : 0;
 
   return (
-    <aside className="w-80 bg-[#0d121d]/90 backdrop-blur-2xl border-l border-white/[0.08] flex flex-col z-20 select-none shadow-2xl text-xs text-slate-300 overflow-y-auto custom-scrollbar">
+    <aside className="w-80 bg-[#18110e]/95 backdrop-blur-2xl border-l border-[#3d302a] flex flex-col z-20 select-none shadow-2xl text-xs text-[#e6ccb2] overflow-y-auto custom-scrollbar">
       {/* Header */}
-      <div className="p-3.5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+      <div className="p-3.5 border-b border-[#3d302a] flex items-center justify-between bg-[#1c1512]">
         <div className="flex items-center gap-2">
-          <Tag className="w-4 h-4 text-amber-400" />
-          <span className="font-bold text-slate-100 text-xs uppercase tracking-wider">
+          <Tag className="w-4 h-4 text-[#c99a6e]" />
+          <span className="font-bold text-[#f5ebe0] text-xs uppercase tracking-wider">
             {selectedType ? `${selectedType} Inspector` : 'Spatial Inspector'}
           </span>
         </div>
         {selectedType && (
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#c99a6e]/15 text-[#c99a6e] border border-[#c99a6e]/30 font-bold">
             Active
           </span>
         )}
@@ -68,32 +68,32 @@ export const RightPropertiesPanel: React.FC = () => {
       <div className="p-3.5 space-y-4">
         {/* --- 1. SELECTED FIXTURE / SHAPE INSPECTOR --- */}
         {selectedFixture && (
-          <div className="space-y-3.5 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3.5 shadow-sm">
+          <div className="space-y-3.5 bg-[#261e1b]/70 border border-[#3d302a] rounded-2xl p-3.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#b08968] uppercase tracking-wider">
                 Object & Shape Config
               </span>
-              <span className="text-[9px] bg-slate-900 text-amber-400 font-mono px-2 py-0.5 rounded-md border border-white/10">
+              <span className="text-[9px] bg-[#1c1512] text-[#c99a6e] font-mono px-2 py-0.5 rounded-md border border-[#3d302a]">
                 {selectedFixture.geometry || 'rectangle'}
               </span>
             </div>
 
             {/* Rename Input */}
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1 font-semibold">Label / Name:</label>
+              <label className="block text-[10px] text-[#b08968] mb-1 font-semibold">Label / Name:</label>
               <input
                 type="text"
                 value={selectedFixture.name}
                 onChange={(e) => updateFixture(selectedFixture.id, { name: e.target.value })}
-                className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400/70 transition"
+                className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-3 py-2 text-xs text-[#f5ebe0] focus:outline-none focus:border-[#c99a6e] transition"
                 placeholder="Name this object..."
               />
             </div>
 
             {/* Shape Geometry Selector */}
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1.5 font-semibold flex items-center gap-1">
-                <Shapes className="w-3.5 h-3.5 text-amber-400" />
+              <label className="block text-[10px] text-[#b08968] mb-1.5 font-semibold flex items-center gap-1">
+                <Shapes className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Remodel Geometry:</span>
               </label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -103,8 +103,8 @@ export const RightPropertiesPanel: React.FC = () => {
                     onClick={() => updateFixture(selectedFixture.id, { geometry: geom.id, vertices: undefined })}
                     className={`py-1.5 px-2 rounded-xl text-[10px] font-semibold transition text-center border ${
                       (selectedFixture.geometry || 'rectangle') === geom.id
-                        ? 'bg-amber-400 text-slate-950 border-amber-400 font-bold shadow-md'
-                        : 'bg-slate-900/60 border-white/[0.08] text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                        ? 'bg-[#c99a6e] text-[#18110e] border-[#c99a6e] font-black shadow-md'
+                        : 'bg-[#1c1512] border-[#3d302a] text-[#b08968] hover:text-[#f5ebe0] hover:bg-[#322723]'
                     }`}
                   >
                     {geom.label.split(' ')[0]}
@@ -114,7 +114,7 @@ export const RightPropertiesPanel: React.FC = () => {
               <div className="flex items-center gap-1.5 mt-2">
                 <button
                   onClick={() => addFixtureVertex(selectedFixture.id)}
-                  className="flex-1 py-1.5 px-2 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-[10px] font-semibold rounded-xl border border-amber-400/30 transition flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 px-2 bg-[#c99a6e]/15 hover:bg-[#c99a6e]/25 text-[#ddb892] text-[10px] font-semibold rounded-xl border border-[#c99a6e]/30 transition flex items-center justify-center gap-1"
                 >
                   <span>+ Add Corner Point</span>
                 </button>
@@ -125,7 +125,7 @@ export const RightPropertiesPanel: React.FC = () => {
                       removeFixtureVertex(selectedFixture.id, verts.length - 1);
                     }
                   }}
-                  className="py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 text-[10px] font-semibold rounded-xl border border-white/10 transition"
+                  className="py-1.5 px-2.5 bg-[#1c1512] hover:bg-[#322723] text-[#b08968] hover:text-rose-400 text-[10px] font-semibold rounded-xl border border-[#3d302a] transition"
                   title="Remove last corner point"
                 >
                   <span>- Point</span>
@@ -136,48 +136,48 @@ export const RightPropertiesPanel: React.FC = () => {
             {/* Width & Depth Inputs */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Width (m):</label>
+                <label className="block text-[10px] text-[#b08968] mb-1">Width (m):</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0.2"
                   value={selectedFixture.width}
                   onChange={(e) => updateFixture(selectedFixture.id, { width: parseFloat(e.target.value) || 0.5 })}
-                  className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-2.5 py-1.5 text-xs text-[#f5ebe0] font-mono focus:outline-none focus:border-[#c99a6e]"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Length / Depth (m):</label>
+                <label className="block text-[10px] text-[#b08968] mb-1">Length / Depth (m):</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0.2"
                   value={selectedFixture.height}
                   onChange={(e) => updateFixture(selectedFixture.id, { height: parseFloat(e.target.value) || 0.5 })}
-                  className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-2.5 py-1.5 text-xs text-[#f5ebe0] font-mono focus:outline-none focus:border-[#c99a6e]"
                 />
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 pt-2 border-t border-white/[0.08]">
+            <div className="flex items-center gap-2 pt-2 border-t border-[#3d302a]">
               <button
                 onClick={() => rotateFixture(selectedFixture.id)}
-                className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
+                className="flex-1 py-1.5 bg-[#1c1512] hover:bg-[#322723] text-[#e6ccb2] rounded-xl border border-[#3d302a] flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
               >
-                <RotateCw className="w-3.5 h-3.5 text-amber-400" />
+                <RotateCw className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Rot 90°</span>
               </button>
               <button
                 onClick={() => cloneFixture(selectedFixture.id)}
-                className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
+                className="flex-1 py-1.5 bg-[#1c1512] hover:bg-[#322723] text-[#e6ccb2] rounded-xl border border-[#3d302a] flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
               >
-                <Copy className="w-3.5 h-3.5 text-amber-400" />
+                <Copy className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Clone</span>
               </button>
               <button
                 onClick={() => deleteFixture(selectedFixture.id)}
-                className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 transition"
+                className="p-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 rounded-xl border border-rose-500/30 transition"
                 title="Delete Object"
               >
                 <Trash2 className="w-4 h-4" />
@@ -188,35 +188,35 @@ export const RightPropertiesPanel: React.FC = () => {
 
         {/* --- 2. SELECTED ROOM / ZONE INSPECTOR --- */}
         {selectedRoom && (
-          <div className="space-y-3.5 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3.5 shadow-sm">
+          <div className="space-y-3.5 bg-[#261e1b]/70 border border-[#3d302a] rounded-2xl p-3.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#b08968] uppercase tracking-wider">
                 Space Zone Config
               </span>
-              <span className="text-[9px] bg-sky-500/10 text-sky-300 font-mono px-2 py-0.5 rounded-md border border-sky-500/20">
+              <span className="text-[9px] bg-[#c99a6e]/15 text-[#c99a6e] font-mono px-2 py-0.5 rounded-md border border-[#c99a6e]/30 font-bold">
                 {(selectedRoom.width * selectedRoom.height).toFixed(1)} m²
               </span>
             </div>
 
             {/* Rename Input */}
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1 font-semibold">Zone / Room Name:</label>
+              <label className="block text-[10px] text-[#b08968] mb-1 font-semibold">Zone / Room Name:</label>
               <input
                 type="text"
                 value={selectedRoom.name}
                 onChange={(e) => updateRoom(selectedRoom.id, { name: e.target.value })}
-                className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 transition"
+                className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-3 py-2 text-xs text-[#f5ebe0] focus:outline-none focus:border-[#c99a6e] transition"
               />
             </div>
 
             {/* Outer Wall Curvature / Radius */}
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-white/[0.06] space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-slate-300">
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a] space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] text-[#e6ccb2]">
                 <span className="font-semibold flex items-center gap-1">
-                  <Sliders className="w-3 h-3 text-amber-400" />
+                  <Sliders className="w-3 h-3 text-[#c99a6e]" />
                   <span>Wall Curvature (Radius):</span>
                 </span>
-                <span className="font-mono text-amber-400 font-bold">{(selectedRoom.wallRadius ?? 0).toFixed(1)}m</span>
+                <span className="font-mono text-[#c99a6e] font-bold">{(selectedRoom.wallRadius ?? 0).toFixed(1)}m</span>
               </div>
               <input
                 type="range"
@@ -225,9 +225,9 @@ export const RightPropertiesPanel: React.FC = () => {
                 step="0.1"
                 value={selectedRoom.wallRadius ?? 0}
                 onChange={(e) => setRoomWallRadius(selectedRoom.id, parseFloat(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer"
+                className="w-full accent-[#c99a6e] cursor-pointer"
               />
-              <div className="flex items-center justify-between text-[9px] text-slate-500">
+              <div className="flex items-center justify-between text-[9px] text-[#8d7b68]">
                 <span>0.0m (Sharp 90°)</span>
                 <span>3.0m (Smooth Curved)</span>
               </div>
@@ -235,14 +235,14 @@ export const RightPropertiesPanel: React.FC = () => {
 
             {/* Custom Polygon Wall Corners */}
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1 font-semibold flex items-center gap-1">
-                <Maximize2 className="w-3 h-3 text-sky-400" />
+              <label className="block text-[10px] text-[#b08968] mb-1 font-semibold flex items-center gap-1">
+                <Maximize2 className="w-3 h-3 text-[#c99a6e]" />
                 <span>Wall Corner Points ({selectedRoom.vertices?.length || 4} Corners):</span>
               </label>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => addRoomVertex(selectedRoom.id)}
-                  className="flex-1 py-1.5 px-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-[10px] font-semibold rounded-xl border border-sky-500/30 transition"
+                  className="flex-1 py-1.5 px-2 bg-[#c99a6e]/15 hover:bg-[#c99a6e]/25 text-[#ddb892] text-[10px] font-semibold rounded-xl border border-[#c99a6e]/30 transition"
                 >
                   + Add Wall Corner
                 </button>
@@ -253,7 +253,7 @@ export const RightPropertiesPanel: React.FC = () => {
                       removeRoomVertex(selectedRoom.id, verts.length - 1);
                     }
                   }}
-                  className="py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 text-[10px] font-semibold rounded-xl border border-white/10 transition"
+                  className="py-1.5 px-2.5 bg-[#1c1512] hover:bg-[#322723] text-[#b08968] hover:text-rose-400 text-[10px] font-semibold rounded-xl border border-[#3d302a] transition"
                   title="Remove last wall corner point"
                 >
                   - Corner
@@ -264,48 +264,48 @@ export const RightPropertiesPanel: React.FC = () => {
             {/* Dimensions */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Width (m):</label>
+                <label className="block text-[10px] text-[#b08968] mb-1">Width (m):</label>
                 <input
                   type="number"
                   step="0.25"
                   min="1"
                   value={selectedRoom.width}
                   onChange={(e) => updateRoom(selectedRoom.id, { width: parseFloat(e.target.value) || 1 })}
-                  className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-400/70"
+                  className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-2.5 py-1.5 text-xs text-[#f5ebe0] font-mono focus:outline-none focus:border-[#c99a6e]"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Length (m):</label>
+                <label className="block text-[10px] text-[#b08968] mb-1">Length (m):</label>
                 <input
                   type="number"
                   step="0.25"
                   min="1"
                   value={selectedRoom.height}
                   onChange={(e) => updateRoom(selectedRoom.id, { height: parseFloat(e.target.value) || 1 })}
-                  className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-400/70"
+                  className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-2.5 py-1.5 text-xs text-[#f5ebe0] font-mono focus:outline-none focus:border-[#c99a6e]"
                 />
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-white/[0.08]">
+            <div className="flex items-center gap-2 pt-2 border-t border-[#3d302a]">
               <button
                 onClick={() => rotateRoom(selectedRoom.id)}
-                className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
+                className="flex-1 py-1.5 bg-[#1c1512] hover:bg-[#322723] text-[#e6ccb2] rounded-xl border border-[#3d302a] flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
               >
-                <RotateCw className="w-3.5 h-3.5 text-sky-400" />
+                <RotateCw className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Rotate</span>
               </button>
               <button
                 onClick={() => cloneRoom(selectedRoom.id)}
-                className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
+                className="flex-1 py-1.5 bg-[#1c1512] hover:bg-[#322723] text-[#e6ccb2] rounded-xl border border-[#3d302a] flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
               >
-                <Copy className="w-3.5 h-3.5 text-sky-400" />
+                <Copy className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Clone</span>
               </button>
               <button
                 onClick={() => deleteRoom(selectedRoom.id)}
-                className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 transition"
+                className="p-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 rounded-xl border border-rose-500/30 transition"
                 title="Delete Space"
               >
                 <Trash2 className="w-4 h-4" />
@@ -316,9 +316,9 @@ export const RightPropertiesPanel: React.FC = () => {
 
         {/* --- 3. SELECTED OPENING INSPECTOR (DOORS & WINDOWS) --- */}
         {selectedOpening && (
-          <div className="space-y-3.5 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3.5 shadow-sm">
+          <div className="space-y-3.5 bg-[#261e1b]/70 border border-[#3d302a] rounded-2xl p-3.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#b08968] uppercase tracking-wider">
                 Door / Window Position
               </span>
               <button
@@ -332,8 +332,8 @@ export const RightPropertiesPanel: React.FC = () => {
 
             {/* Wall Selector Buttons */}
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1.5 font-semibold flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-amber-400" />
+              <label className="block text-[10px] text-[#b08968] mb-1.5 font-semibold flex items-center gap-1">
+                <Compass className="w-3.5 h-3.5 text-[#c99a6e]" />
                 <span>Attach to Wall:</span>
               </label>
               <div className="grid grid-cols-4 gap-1">
@@ -343,8 +343,8 @@ export const RightPropertiesPanel: React.FC = () => {
                     onClick={() => moveOpening(selectedOpening.id, selectedOpening.offset, w)}
                     className={`py-1.5 text-[10px] font-bold uppercase rounded-xl border transition ${
                       selectedOpening.wall === w
-                        ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-md font-bold'
-                        : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                        ? 'bg-[#c99a6e] text-[#18110e] border-[#c99a6e] shadow-md font-black'
+                        : 'bg-[#1c1512] border-[#3d302a] text-[#b08968] hover:text-[#f5ebe0]'
                     }`}
                   >
                     {w}
@@ -354,10 +354,10 @@ export const RightPropertiesPanel: React.FC = () => {
             </div>
 
             {/* Position Slider along Wall */}
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-white/[0.06] space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-slate-300">
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a] space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] text-[#e6ccb2]">
                 <span className="font-semibold">Offset Along Wall:</span>
-                <span className="font-mono text-amber-400 font-bold">{selectedOpening.offset.toFixed(2)}m</span>
+                <span className="font-mono text-[#c99a6e] font-bold">{selectedOpening.offset.toFixed(2)}m</span>
               </div>
               <input
                 type="range"
@@ -373,49 +373,49 @@ export const RightPropertiesPanel: React.FC = () => {
                 step="0.05"
                 value={selectedOpening.offset}
                 onChange={(e) => moveOpening(selectedOpening.id, parseFloat(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer"
+                className="w-full accent-[#c99a6e] cursor-pointer"
               />
             </div>
 
             {/* Flip Swing Direction */}
             <button
               onClick={() => flipOpeningSwing(selectedOpening.id)}
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-white/10 transition flex items-center justify-center gap-1.5"
+              className="w-full py-2 bg-[#1c1512] hover:bg-[#322723] text-[#e6ccb2] text-xs font-semibold rounded-xl border border-[#3d302a] transition flex items-center justify-center gap-1.5"
             >
-              <RotateCw className="w-3.5 h-3.5 text-amber-400" />
+              <RotateCw className="w-3.5 h-3.5 text-[#c99a6e]" />
               <span>Flip Swing Direction ({selectedOpening.swingDirection || 'inside'})</span>
             </button>
           </div>
         )}
 
         {/* --- 4. GLOBAL VENUE & PLOT METRICS --- */}
-        <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-3.5 space-y-3">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+        <div className="bg-[#261e1b]/40 border border-[#3d302a] rounded-2xl p-3.5 space-y-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#b08968] uppercase tracking-wider">
+            <Building2 className="w-3.5 h-3.5 text-[#c99a6e]" />
             <span>Venue & Land Statistics</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.06]">
-              <div className="text-[10px] text-slate-400">Total Footprint</div>
-              <div className="font-mono font-bold text-slate-100 text-sm mt-0.5">
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a]">
+              <div className="text-[10px] text-[#b08968]">Total Footprint</div>
+              <div className="font-mono font-bold text-[#f5ebe0] text-sm mt-0.5">
                 {plot.width} × {plot.height} {plot.unit}
               </div>
             </div>
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.06]">
-              <div className="text-[10px] text-slate-400">Total Area</div>
-              <div className="font-mono font-bold text-slate-100 text-sm mt-0.5">
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a]">
+              <div className="text-[10px] text-[#b08968]">Total Area</div>
+              <div className="font-mono font-bold text-[#f5ebe0] text-sm mt-0.5">
                 {plotArea.toFixed(1)} {plot.unit}²
               </div>
             </div>
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.06]">
-              <div className="text-[10px] text-slate-400">Active Usable Space</div>
-              <div className="font-mono font-bold text-amber-400 text-sm mt-0.5">
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a]">
+              <div className="text-[10px] text-[#b08968]">Active Usable Space</div>
+              <div className="font-mono font-bold text-[#c99a6e] text-sm mt-0.5">
                 {totalBuiltArea.toFixed(1)} {plot.unit}²
               </div>
             </div>
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.06]">
-              <div className="text-[10px] text-slate-400">Space Utilization</div>
+            <div className="bg-[#1c1512] p-2.5 rounded-xl border border-[#3d302a]">
+              <div className="text-[10px] text-[#b08968]">Space Utilization</div>
               <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
                 {coverageRatio.toFixed(1)}%
               </div>
@@ -424,18 +424,18 @@ export const RightPropertiesPanel: React.FC = () => {
 
           {/* Breakdown List */}
           {rooms.length > 0 && (
-            <div className="pt-2 border-t border-white/[0.08] space-y-1.5">
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">
+            <div className="pt-2 border-t border-[#3d302a] space-y-1.5">
+              <div className="text-[10px] text-[#b08968] uppercase font-semibold">
                 Spaces Breakdown ({rooms.length})
               </div>
               <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar pr-1">
                 {rooms.map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center justify-between text-[11px] bg-slate-950/60 px-2.5 py-1.5 rounded-xl border border-white/[0.06]"
+                    className="flex items-center justify-between text-[11px] bg-[#1c1512] px-2.5 py-1.5 rounded-xl border border-[#3d302a]"
                   >
-                    <span className="text-slate-200 truncate font-medium">{r.name}</span>
-                    <span className="font-mono text-slate-400 text-[10px]">
+                    <span className="text-[#f5ebe0] truncate font-medium">{r.name}</span>
+                    <span className="font-mono text-[#b08968] text-[10px]">
                       {(r.width * r.height).toFixed(1)} m²
                     </span>
                   </div>

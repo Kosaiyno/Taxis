@@ -97,7 +97,7 @@ Generated via TAXIS (WebMCP Spatial Planning Engine)`;
 
     img.onload = () => {
       if (ctx) {
-        ctx.fillStyle = '#090d16';
+        ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
@@ -113,19 +113,19 @@ Generated via TAXIS (WebMCP Spatial Planning Engine)`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0d121d] border border-white/[0.12] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-slate-300">
+      <div className="bg-[#1c1512] border border-[#3d302a] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-[#e6ccb2]">
         {/* Header */}
-        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+        <div className="p-5 border-b border-[#3d302a] flex items-center justify-between bg-[#15100e]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-2xl bg-[#c99a6e]/15 border border-[#c99a6e]/30 text-[#c99a6e] flex items-center justify-center">
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100">Export Vector Floor Plan</h2>
-              <p className="text-xs text-slate-400">Download CAD blueprints, high-res renders, or project state</p>
+              <h2 className="text-sm font-bold text-[#f5ebe0]">Export Vector Floor Plan</h2>
+              <p className="text-xs text-[#b08968]">Download CAD blueprints, high-res renders, or project state</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 p-2 rounded-xl hover:bg-white/[0.06] transition">
+          <button onClick={onClose} className="text-[#b08968] hover:text-[#f5ebe0] p-2 rounded-xl hover:bg-[#261e1b] transition">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -136,78 +136,78 @@ Generated via TAXIS (WebMCP Spatial Planning Engine)`;
             {/* SVG */}
             <button
               onClick={handleDownloadSVG}
-              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
+              className="p-3.5 rounded-2xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group shadow-sm"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
+                <div className="w-9 h-9 rounded-xl bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">Vector Blueprint (SVG)</div>
-                  <div className="text-[11px] text-slate-400">Clean scalable vector for architects and CAD software</div>
+                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e] transition-colors">Vector Blueprint (SVG)</div>
+                  <div className="text-[11px] text-[#b08968]">Clean scalable vector for architects and CAD software</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
+              <Download className="w-4 h-4 text-[#8d7b68] group-hover:text-[#c99a6e] transition-colors" />
             </button>
 
             {/* PNG */}
             <button
               onClick={handleDownloadPNG}
-              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
+              className="p-3.5 rounded-2xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group shadow-sm"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
+                <div className="w-9 h-9 rounded-xl bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
                   <ImageIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">High-Res Image (PNG)</div>
-                  <div className="text-[11px] text-slate-400">Crisp image render for client presentations and print</div>
+                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e] transition-colors">High-Res Image (PNG)</div>
+                  <div className="text-[11px] text-[#b08968]">Crisp image render for client presentations and print</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
+              <Download className="w-4 h-4 text-[#8d7b68] group-hover:text-[#c99a6e] transition-colors" />
             </button>
 
             {/* JSON */}
             <button
               onClick={handleDownloadJSON}
-              className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-400/40 flex items-center justify-between transition text-left group shadow-sm"
+              className="p-3.5 rounded-2xl bg-[#261e1b] hover:bg-[#322723] border border-[#3d302a] hover:border-[#c99a6e] flex items-center justify-between transition text-left group shadow-sm"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/20">
+                <div className="w-9 h-9 rounded-xl bg-[#c99a6e]/15 text-[#c99a6e] flex items-center justify-center border border-[#c99a6e]/30">
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-100 group-hover:text-amber-300 transition-colors">Project State (JSON)</div>
-                  <div className="text-[11px] text-slate-400">Structured data to share or reload with WebMCP agents</div>
+                  <div className="font-bold text-[#f5ebe0] group-hover:text-[#c99a6e] transition-colors">Project State (JSON)</div>
+                  <div className="text-[11px] text-[#b08968]">Structured data to share or reload with WebMCP agents</div>
                 </div>
               </div>
-              <Download className="w-4 h-4 text-slate-400 group-hover:text-amber-300 transition-colors" />
+              <Download className="w-4 h-4 text-[#8d7b68] group-hover:text-[#c99a6e] transition-colors" />
             </button>
           </div>
 
           {/* Copy Summary */}
-          <div className="p-4 bg-slate-950/60 rounded-2xl border border-white/[0.08] space-y-2.5">
+          <div className="p-4 bg-[#15100e] rounded-2xl border border-[#3d302a] space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-200 text-xs">Architect Specs Summary</span>
+              <span className="font-bold text-[#f5ebe0] text-xs">Architect Specs Summary</span>
               <button
                 onClick={handleCopySummary}
-                className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] text-slate-200 rounded-xl border border-white/[0.08] flex items-center gap-1.5 transition text-[11px]"
+                className="px-3 py-1.5 bg-[#261e1b] hover:bg-[#322723] text-[#e6ccb2] rounded-xl border border-[#3d302a] flex items-center gap-1.5 transition text-[11px]"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-[#c99a6e]" />}
                 <span>{copied ? 'Copied!' : 'Copy Summary'}</span>
               </button>
             </div>
-            <pre className="p-3 bg-slate-900 rounded-xl text-[10px] font-mono text-slate-300 overflow-x-auto max-h-32 border border-white/[0.06] custom-scrollbar">
+            <pre className="p-3 bg-[#1c1512] rounded-xl text-[10px] font-mono text-[#b08968] overflow-x-auto max-h-32 border border-[#261e1b] custom-scrollbar">
               {generateSummaryText()}
             </pre>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/[0.08] flex items-center justify-end bg-white/[0.02]">
+        <div className="p-4 border-t border-[#3d302a] flex items-center justify-end bg-[#15100e]">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-100 font-bold rounded-xl border border-white/10 transition text-xs"
+            className="px-5 py-2.5 bg-[#261e1b] hover:bg-[#322723] text-[#f5ebe0] font-bold rounded-xl border border-[#3d302a] transition text-xs"
           >
             Close
           </button>
