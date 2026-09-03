@@ -4,12 +4,14 @@ import {
   Redo2,
   Download,
   LandPlot,
-  Check,
   Trash2,
   RotateCcw,
   PlusCircle,
+  FolderArchive,
+  Save,
 } from 'lucide-react';
 import { useFloorPlanStore } from '../../store/floorplanStore';
+import { ProjectsLibraryModal } from '../modals/ProjectsLibraryModal';
 
 interface TopNavbarProps {
   onOpenPlotModal: () => void;
@@ -34,15 +36,21 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   } = useFloorPlanStore();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [showProjectsModal, setShowProjectsModal] = useState(false);
+  const [projectsModalMode, setProjectsModalMode] = useState<'save' | 'library'>('save');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
   const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    setProjectsModalMode('save');
+    setShowProjectsModal(true);
+  };
+
+  const handleOpenLibrary = () => {
+    setProjectsModalMode('library');
+    setShowProjectsModal(true);
   };
 
   const handleClearAll = () => {
@@ -179,15 +187,32 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             <span>Export</span>
           </button>
 
+          {/* Saved Layouts Library Button */}
+          <button
+            onClick={handleOpenLibrary}
+            className="px-3.5 py-1.5 bg-[#261e1b] hover:bg-[#322723] text-[#e6ccb2] font-medium rounded-xl border border-[#3d302a] transition flex items-center gap-1.5 text-xs shadow-sm hover:border-[#c99a6e]"
+            title="Open saved layouts library"
+          >
+            <FolderArchive className="w-3.5 h-3.5 text-[#c99a6e]" />
+            <span>Layouts</span>
+          </button>
+
           <button
             onClick={handleSave}
             className="px-4 py-1.5 bg-[#c99a6e] hover:bg-[#b08968] text-[#18110e] font-black rounded-xl shadow-md shadow-[#c99a6e]/20 transition flex items-center gap-1.5 text-xs active:scale-95"
           >
-            {isSaved ? <Check className="w-3.5 h-3.5" /> : null}
-            <span>{isSaved ? 'Saved' : 'Save'}</span>
+            <Save className="w-3.5 h-3.5 text-[#18110e]" />
+            <span>Save</span>
           </button>
         </div>
       </header>
+
+      {/* Projects Library Modal */}
+      <ProjectsLibraryModal
+        isOpen={showProjectsModal}
+        onClose={() => setShowProjectsModal(false)}
+        initialMode={projectsModalMode}
+      />
 
       {/* Clear / Start from Scratch Confirmation Modal */}
       {showClearConfirm && (

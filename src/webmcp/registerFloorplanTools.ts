@@ -14,6 +14,12 @@ import { snapToGrid } from '../utils/geometry';
 import { validateFloorplan, getConnectivityGraph } from '../utils/architecturalValidation';
 import { generateSvgBlueprint } from '../utils/exportSvg';
 import { SPACE_CATEGORIES } from '../utils/defaultPresets';
+import {
+  getSavedProjectsLibrary,
+  saveProjectToLibrary,
+  loadProjectFromLibrary,
+  deleteProjectFromLibrary,
+} from '../utils/projectStorage';
 
 declare global {
   interface ModelContextTool {
@@ -2050,14 +2056,16 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     execute: async () => {
       const state = useFloorPlanStore.getState();
+      const savedItem = saveProjectToLibrary(state.projectName, state);
       return {
         success: true,
-        timestamp: new Date().toISOString(),
-        projectName: state.projectName,
+        timestamp: savedItem.savedAt,
+        projectId: savedItem.id,
+        projectName: savedItem.name,
         roomsCount: state.rooms.length,
         openingsCount: state.openings.length,
         fixturesCount: state.fixtures.length,
-        message: `Project "${state.projectName}" saved successfully.`,
+        message: `Project "${savedItem.name}" saved to library successfully.`,
       };
     },
   };
@@ -2077,6 +2085,115 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
         svgSnapshot: svg,
         message: 'Generated SVG blueprint snapshot.',
       };
+    },
+  };
+
+  // 60. save_project_as
+  const saveProjectAsTool: ModelContextTool = {
+    name: 'save_project_as',
+    description: 'Saves the current floor plan layout to the project library with a custom name and optional notes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Name for this saved floor plan design' },
+        notes: { type: 'string', description: 'Optional design notes or description' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    execute: async (input: { name: string; notes?: string }) => {
+      const state = useFloorPlanStore.getState();
+      const savedItem = saveProjectToLibrary(input.name, state, input.notes);
+      return {
+        success: true,
+        projectId: savedItem.id,
+        name: savedItem.name,
+        savedAt: savedItem.savedAt,
+        message: `Layout "${savedItem.name}" saved to library.`,
+      };
+    },
+  };
+
+  // 61. list_saved_projects
+  const listSavedProjectsTool: ModelContextTool = {
+    name: 'list_saved_projects',
+    description: 'Lists all saved floor plan layouts stored in the project library.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const library = getSavedProjectsLibrary();
+      return {
+        totalSaved: library.length,
+        projects: library.map((p) => ({
+          id: p.id,
+          name: p.name,
+          savedAt: p.savedAt,
+          notes: p.notes,
+          roomsCount: p.state.rooms.length,
+          openingsCount: p.state.openings.length,
+          fixturesCount: p.state.fixtures.length,
+          plotDimensions: `${p.state.plot.width}m × ${p.state.plot.height}m`,
+        })),
+      };
+    },
+  };
+
+  // 62. load_saved_project
+  const loadSavedProjectTool: ModelContextTool = {
+    name: 'load_saved_project',
+    description: 'Loads a previously saved floor plan layout from the library onto the active canvas.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_name_or_id: { type: 'string', description: 'Name or ID of the saved project to load' },
+      },
+      required: ['project_name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: { project_name_or_id: string }) => {
+      const item = loadProjectFromLibrary(input.project_name_or_id);
+      if (!item) {
+        throw new Error(`Saved project "${input.project_name_or_id}" not found in library.`);
+      }
+      const { loadState } = useFloorPlanStore.getState();
+      loadState({
+        projectName: item.state.projectName,
+        plot: item.state.plot,
+        rooms: item.state.rooms,
+        openings: item.state.openings,
+        fixtures: item.state.fixtures,
+        metadata: item.state.metadata,
+        activeCategory: item.state.activeCategory,
+        selectedId: null,
+        selectedType: null,
+      });
+      return {
+        success: true,
+        projectName: item.name,
+        roomsCount: item.state.rooms.length,
+        message: `Loaded "${item.name}" onto canvas.`,
+      };
+    },
+  };
+
+  // 63. delete_saved_project
+  const deleteSavedProjectTool: ModelContextTool = {
+    name: 'delete_saved_project',
+    description: 'Deletes a saved layout from the project library.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_name_or_id: { type: 'string', description: 'Name or ID of the project to delete' },
+      },
+      required: ['project_name_or_id'],
+      additionalProperties: false,
+    },
+    execute: async (input: { project_name_or_id: string }) => {
+      const deleted = deleteProjectFromLibrary(input.project_name_or_id);
+      if (!deleted) {
+        return { success: false, error: `Project "${input.project_name_or_id}" not found.` };
+      }
+      return { success: true, message: `Deleted project "${input.project_name_or_id}" from library.` };
     },
   };
 
@@ -2140,6 +2257,10 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     exportProjectTool,
     saveProjectTool,
     renderPlanSnapshotTool,
+    saveProjectAsTool,
+    listSavedProjectsTool,
+    loadSavedProjectTool,
+    deleteSavedProjectTool,
   ];
 
   // 1. Register with browser native document.modelContext
