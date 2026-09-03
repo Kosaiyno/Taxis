@@ -18,6 +18,20 @@ Whether you are laying out a residential home, an open-concept commercial office
 
 ---
 
+## 🏛️ What's in a Name? The Etymology of *Taxis*
+
+**Taxis** takes its name from the Ancient Greek **τάξις** (*táxis*), derived from the verb *τάσσω* (*tássō* — "to arrange, set in order, assign to a rightful place or station").
+
+In classical Greek philosophy, architecture, and mathematics, *táxis* stood for:
+- **Intentional Arrangement**: The deliberate, proportional distribution and ordering of physical parts into an organic whole.
+- **Order Over Chaos**: The act of giving structure, geometry, and purpose to an empty space.
+- **Rightful Station**: Ensuring every wall, portal, corridor, and furnishing occupies its mathematically and functionally optimal position.
+- **The Root of Coherence**: It is the etymological root of modern words like **taxonomy** (the systematic organization of categories), **syntax** (harmonious arrangement of components), and **tactics** (strategic deployment in space).
+
+We chose the name **Taxis** because creating physical environments is not about hallucinating random pixels—it is the art and science of **arranging order, purpose, and harmony between human architects and autonomous agent intelligence**.
+
+---
+
 ## ⚡ Core Principles: Human & Agent Parity
 
 In Taxis, **anything the agent can do, the human can do — and vice versa**:
