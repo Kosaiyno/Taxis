@@ -980,13 +980,7 @@ export const FloorPlanCanvas: React.FC = () => {
       onTouchEnd={handleTouchEnd}
       className="flex-1 h-full w-full relative overflow-hidden cursor-crosshair bg-[#ffffff] select-none touch-none"
     >
-      <svg
-        className="w-full h-full absolute inset-0"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: '0 0',
-        }}
-      >
+      <svg className="w-full h-full absolute inset-0 block">
         <defs>
           {/* Subtle 0.25m minor grid lines */}
           <pattern
@@ -1046,17 +1040,19 @@ export const FloorPlanCanvas: React.FC = () => {
           </pattern>
         </defs>
 
-        {/* 1. Background Grid (Infinite Continuous Drafting Canvas - No Cutoff) */}
-        {showGrid && (
-          <rect
-            x={-50000}
-            y={-50000}
-            width={100000}
-            height={100000}
-            fill="url(#gridMajorLight)"
-            className="pointer-events-none"
-          />
-        )}
+        {/* Main Canvas World Group (Handles Zoom & Pan smoothly without clipping the SVG viewport) */}
+        <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+          {/* 1. Background Grid (Truly Infinite Continuous Drafting Canvas) */}
+          {showGrid && (
+            <rect
+              x={-500000}
+              y={-500000}
+              width={1000000}
+              height={1000000}
+              fill="url(#gridMajorLight)"
+              className="pointer-events-none"
+            />
+          )}
 
         {/* 2. Land Boundary (Main Property Plot Centered In The Middle) */}
         <g className="pointer-events-none">
@@ -1435,6 +1431,7 @@ export const FloorPlanCanvas: React.FC = () => {
             </g>
           );
         })}
+        </g>
       </svg>
 
       {/* Floating Zoom Bar (Bottom Left) */}
