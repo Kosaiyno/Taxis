@@ -131,12 +131,44 @@ const pushHistory = (state: FloorPlanStore) => {
   };
 };
 
+const STORAGE_KEY = 'taxis_spatial_project_v1';
+
+function loadPersistedState(): Partial<FloorPlanState> | null {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.rooms) && parsed.plot) {
+      return parsed;
+    }
+  } catch (e) {
+    console.warn('[Taxis] Failed to load saved plan from localStorage', e);
+  }
+  return null;
+}
+
+const savedState = loadPersistedState();
+const initialProject = savedState
+  ? {
+      projectName: savedState.projectName || DEFAULT_INITIAL_PROJECT.projectName,
+      plot: savedState.plot || DEFAULT_INITIAL_PROJECT.plot,
+      rooms: savedState.rooms || DEFAULT_INITIAL_PROJECT.rooms,
+      openings: savedState.openings || DEFAULT_INITIAL_PROJECT.openings,
+      fixtures: savedState.fixtures || DEFAULT_INITIAL_PROJECT.fixtures,
+      metadata: savedState.metadata,
+      activeCategory: savedState.activeCategory,
+    }
+  : DEFAULT_INITIAL_PROJECT;
+
 export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
-  projectName: DEFAULT_INITIAL_PROJECT.projectName,
-  plot: DEFAULT_INITIAL_PROJECT.plot,
-  rooms: DEFAULT_INITIAL_PROJECT.rooms,
-  openings: DEFAULT_INITIAL_PROJECT.openings,
-  fixtures: DEFAULT_INITIAL_PROJECT.fixtures,
+  projectName: initialProject.projectName,
+  plot: initialProject.plot,
+  rooms: initialProject.rooms,
+  openings: initialProject.openings,
+  fixtures: initialProject.fixtures,
+  metadata: (initialProject as any).metadata,
+  activeCategory: (initialProject as any).activeCategory,
   selectedId: null,
   selectedType: null,
   activeTool: 'select',
@@ -152,10 +184,10 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
   viewMode: '2d',
   history: [
     {
-      rooms: JSON.parse(JSON.stringify(DEFAULT_INITIAL_PROJECT.rooms)),
-      openings: JSON.parse(JSON.stringify(DEFAULT_INITIAL_PROJECT.openings)),
-      fixtures: JSON.parse(JSON.stringify(DEFAULT_INITIAL_PROJECT.fixtures)),
-      plot: JSON.parse(JSON.stringify(DEFAULT_INITIAL_PROJECT.plot)),
+      rooms: JSON.parse(JSON.stringify(initialProject.rooms)),
+      openings: JSON.parse(JSON.stringify(initialProject.openings)),
+      fixtures: JSON.parse(JSON.stringify(initialProject.fixtures)),
+      plot: JSON.parse(JSON.stringify(initialProject.plot)),
     },
   ],
   historyIndex: 0,
@@ -756,6 +788,9 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
   },
 
   resetToDefault: () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
     set((state) => {
       const nextState = {
         ...state,
@@ -829,3 +864,26 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
     return true;
   },
 }));
+
+// Subscribe to automatically persist any changes (by human or agent) to localStorage
+let saveTimeout: any = null;
+useFloorPlanStore.subscribe((state) => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    try {
+      const snapshot = {
+        projectName: state.projectName,
+        plot: state.plot,
+        rooms: state.rooms,
+        openings: state.openings,
+        fixtures: state.fixtures,
+        metadata: state.metadata,
+        activeCategory: state.activeCategory,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (e) {
+      console.warn('[Taxis] Failed to auto-save to localStorage', e);
+    }
+  }, 100);
+});
