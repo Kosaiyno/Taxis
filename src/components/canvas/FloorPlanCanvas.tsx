@@ -40,6 +40,8 @@ export const FloorPlanCanvas: React.FC = () => {
     cloneRoom,
     deleteRoom,
     recordHistory,
+    undo,
+    redo,
     zoom,
     setZoom,
     pan,
@@ -119,10 +121,27 @@ export const FloorPlanCanvas: React.FC = () => {
     };
   }, [centerPlot]);
 
-  // Keyboard Shortcuts (Delete, Ctrl+D Duplicate, R Rotate)
+  // Keyboard Shortcuts (Delete, Ctrl+D Duplicate, R Rotate, Ctrl+Z Undo, Ctrl+Y Redo)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+
+      // Undo: Ctrl+Z or Cmd+Z (without Shift)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y, Cmd+Y, or Ctrl+Shift+Z / Cmd+Shift+Z
+      if (
+        ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && e.shiftKey)
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         if (selectedType === 'fixture') deleteFixture(selectedId);
@@ -144,7 +163,7 @@ export const FloorPlanCanvas: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, selectedType]);
+  }, [selectedId, selectedType, undo, redo]);
 
   // Zoom via Wheel
   const handleWheel = (e: React.WheelEvent) => {
@@ -302,11 +321,15 @@ export const FloorPlanCanvas: React.FC = () => {
           ? fix.vertices.map((v) => ({ x: v.x * scaleX, y: v.y * scaleY }))
           : undefined;
 
-        updateFixture(resizingFixtureId, {
-          width: newW,
-          height: newH,
-          ...(newVerts ? { vertices: newVerts } : {}),
-        });
+        updateFixture(
+          resizingFixtureId,
+          {
+            width: newW,
+            height: newH,
+            ...(newVerts ? { vertices: newVerts } : {}),
+          },
+          true
+        );
       }
       return;
     }
@@ -434,7 +457,7 @@ export const FloorPlanCanvas: React.FC = () => {
         targetY = snapped.y;
       }
 
-      updateRoom(draggingRoomId, { x: Math.max(0, targetX), y: Math.max(0, targetY) });
+      updateRoom(draggingRoomId, { x: Math.max(0, targetX), y: Math.max(0, targetY) }, true);
       return;
     }
 
@@ -472,7 +495,7 @@ export const FloorPlanCanvas: React.FC = () => {
         newH = snapToGrid(newH, gridSnapSize);
       }
 
-      updateRoom(resizingRoomId, { x: newX, y: newY, width: newW, height: newH });
+      updateRoom(resizingRoomId, { x: newX, y: newY, width: newW, height: newH }, true);
     }
   };
 
@@ -1434,15 +1457,16 @@ export const FloorPlanCanvas: React.FC = () => {
         </g>
       </svg>
 
-      {/* Floating Zoom Bar (Bottom Left) */}
-      <div className="absolute bottom-4 left-4 flex items-center bg-[#261e1b] text-[#e6ccb2] rounded-lg shadow-lg border border-[#3d302a] p-1 text-xs font-mono select-none">
+      {/* Floating Zoom & Action Bar (Bottom Left) */}
+      <div className="absolute bottom-4 left-4 flex items-center bg-[#261e1b] text-[#e6ccb2] rounded-lg shadow-lg border border-[#3d302a] p-1 text-xs font-mono select-none gap-0.5">
         <button
           onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
           className="px-2 py-1 hover:bg-[#3d302a] rounded font-bold"
+          title="Zoom Out"
         >
           −
         </button>
-        <span className="px-3 py-1 font-semibold">{Math.round(zoom * 100)}%</span>
+        <span className="px-2 py-1 font-semibold">{Math.round(zoom * 100)}%</span>
         <button
           onClick={() => setZoom((z) => Math.min(3.0, z + 0.15))}
           className="px-2 py-1 hover:bg-[#3d302a] rounded font-bold"
@@ -1452,11 +1476,26 @@ export const FloorPlanCanvas: React.FC = () => {
         </button>
         <span className="text-[#3d302a] px-0.5">|</span>
         <button
+          onClick={undo}
+          className="px-2 py-1 hover:bg-[#3d302a] rounded font-sans font-bold text-[10px] text-[#e6ccb2] hover:text-[#f5ebe0] transition flex items-center gap-1"
+          title="Undo mistake (Ctrl+Z)"
+        >
+          <span>↶ Undo</span>
+        </button>
+        <button
+          onClick={redo}
+          className="px-2 py-1 hover:bg-[#3d302a] rounded font-sans font-bold text-[10px] text-[#e6ccb2] hover:text-[#f5ebe0] transition flex items-center gap-1"
+          title="Redo action (Ctrl+Y or Ctrl+Shift+Z)"
+        >
+          <span>↷ Redo</span>
+        </button>
+        <span className="text-[#3d302a] px-0.5">|</span>
+        <button
           onClick={centerPlot}
           className="px-2 py-1 hover:bg-[#3d302a] rounded font-sans font-bold text-[10px] text-[#c99a6e] hover:text-[#f5ebe0] transition flex items-center gap-1"
           title="Center Main Plot in the Middle of Screen"
         >
-          <span>🎯 Center Plot</span>
+          <span>🎯 Center</span>
         </button>
       </div>
 

@@ -36,7 +36,7 @@ interface FloorPlanStore extends FloorPlanState {
     wallRadius?: number;
     vertices?: VertexPoint[];
   }) => string;
-  updateRoom: (id: string, updates: Partial<Room>) => void;
+  updateRoom: (id: string, updates: Partial<Room>, skipHistory?: boolean) => void;
   resizeRoom: (idOrName: string, width: number, height: number) => boolean;
   moveRoom: (idOrName: string, x: number, y: number) => boolean;
   rotateRoom: (id: string) => void;
@@ -70,7 +70,7 @@ interface FloorPlanStore extends FloorPlanState {
     customColor?: string;
     notes?: string;
   }) => string;
-  updateFixture: (id: string, updates: Partial<Fixture>) => void;
+  updateFixture: (id: string, updates: Partial<Fixture>, skipHistory?: boolean) => void;
   moveFixture: (id: string, x: number, y: number, newRoomId?: string) => void;
   resizeFixture: (id: string, width: number, height: number) => void;
   rotateFixture: (id: string) => void;
@@ -117,7 +117,7 @@ const pushHistory = (state: FloorPlanStore) => {
   const newHistory = state.history.slice(0, state.historyIndex + 1);
   newHistory.push(currentSnapshot);
 
-  if (newHistory.length > 30) {
+  if (newHistory.length > 50) {
     newHistory.shift();
   }
 
@@ -224,11 +224,11 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
     return id;
   },
 
-  updateRoom: (id, updates) => {
+  updateRoom: (id, updates, skipHistory = false) => {
     set((state) => {
       const rooms = state.rooms.map((r) => (r.id === id ? { ...r, ...updates } : r));
       const nextState = { ...state, rooms };
-      return { ...nextState, ...pushHistory(nextState) };
+      return skipHistory ? nextState : { ...nextState, ...pushHistory(nextState) };
     });
   },
 
@@ -514,11 +514,11 @@ export const useFloorPlanStore = create<FloorPlanStore>((set, get) => ({
     return id;
   },
 
-  updateFixture: (id, updates) => {
+  updateFixture: (id, updates, skipHistory = false) => {
     set((state) => {
       const fixtures = state.fixtures.map((f) => (f.id === id ? { ...f, ...updates } : f));
       const nextState = { ...state, fixtures };
-      return { ...nextState, ...pushHistory(nextState) };
+      return skipHistory ? nextState : { ...nextState, ...pushHistory(nextState) };
     });
   },
 
