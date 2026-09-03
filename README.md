@@ -3,7 +3,7 @@
 > You design the space yourself, or let your agent handle the tedious spatial work. Both of you can edit the same plan.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
-[![WebMCP: Active](https://img.shields.io/badge/WebMCP-26%20Spatial%20Tools-success.svg)](src/webmcp/registerFloorplanTools.ts)
+[![WebMCP: Active](https://img.shields.io/badge/WebMCP-28%20Spatial%20Tools-success.svg)](src/webmcp/registerFloorplanTools.ts)
 [![Engine: React 18 + Vite](https://img.shields.io/badge/Built%20With-React%2018%20%2B%20TypeScript-blue.svg)](package.json)
 
 ---
@@ -99,15 +99,17 @@ document.modelContext.registerTool({
 | | `remodel_room_walls` | Reshapes room walls into custom multi-corner polygons |
 | | `add_room_wall_corner` | Adds a new corner vertex point along the room wall perimeter |
 | | `remove_room_wall_corner` | Removes a wall corner point |
+| | `set_room_color` | Assigns a tint color (hex code or color name) to any space/zone |
 | | `auto_arrange_floorplan` | Intelligent spatial packing algorithm for multiple spaces |
 | **Doors & Windows** | `add_door` | Attaches single, double, sliding, or pocket doors to any wall |
 | | `move_opening` | Slides openings along wall perimeter (360° rotation across all walls) |
 | | `flip_door_swing` | Toggles swing direction between inside and outside |
 | | `add_window` | Places standard, double, or bay windows on any wall |
-| **Shapes & Objects** | `add_fixture` | Places furniture, equipment, booths, stages, or custom geometric entities |
+| **Shapes & Objects** | `add_fixture` | Places furniture, equipment, booths, stages, or custom geometric entities with optional color |
+| | `set_object_color` | Assigns color/material (hex or named color: emerald, blue, gold, dark, rose, amber, teal) |
 | | `resize_fixture` | Resizes width and height with proportional vertex scaling |
 | | `rotate_fixture` | Rotates objects and shapes in 90° increments |
-| | `update_fixture` | Customizes name, dimensions, or geometry shape preset |
+| | `update_fixture` | Customizes name, dimensions, color, or geometry shape preset |
 | | `remodel_fixture_shape` | Sets geometric shape: `rectangle`, `circle`, `l_shape`, `u_shape`, `t_shape`, `v_shape`, `polygon` |
 | | `add_fixture_vertex` | Adds a custom polygon corner point for detailed freeform modeling |
 | | `delete_fixture` | Deletes specific objects, shapes, or equipment |
@@ -165,13 +167,20 @@ await document.modelContext.executeTool("add_room", {
   height: 4.5
 });
 
-// 4. Place an L-shaped reception desk
+// 4. Place an L-shaped reception desk with custom color
 await document.modelContext.executeTool("add_fixture", {
   name: "Front Reception",
   type: "custom_shape",
   geometry: "l_shape",
+  color: "emerald",
   width: 2.5,
   height: 2.0
+});
+
+// 5. Change color of an existing object
+await document.modelContext.executeTool("set_object_color", {
+  object_name_or_id: "Front Reception",
+  color: "gold"
 });
 ```
 

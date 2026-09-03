@@ -8,6 +8,19 @@ const SCALE = 60; // 1 meter = 60 pixels at zoom 1.0
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
 
+function isDarkColor(hex?: string): boolean {
+  if (!hex || hex === '#ffffff') return false;
+  const c = hex.replace('#', '');
+  if (c.length === 6) {
+    const r = parseInt(c.substr(0, 2), 16);
+    const g = parseInt(c.substr(2, 2), 16);
+    const b = parseInt(c.substr(4, 2), 16);
+    const hsp = Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b));
+    return hsp < 145;
+  }
+  return false;
+}
+
 export const FloorPlanCanvas: React.FC = () => {
   const {
     plot,
@@ -694,6 +707,13 @@ export const FloorPlanCanvas: React.FC = () => {
         ? fix.vertices
         : getDefaultVerticesForGeometry(geom, fix.width, fix.height);
 
+      const fixColor = fix.customColor;
+      const isDark = isDarkColor(fixColor);
+      const defaultFill = isSelected ? '#f3f4f6' : '#ffffff';
+      const shapeFill = fixColor || defaultFill;
+      const shapeStroke = isSelected ? '#c99a6e' : (fixColor ? '#18110e' : '#111827');
+      const shapeStrokeWidth = isSelected ? 2.5 : 1.8;
+
       return (
         <g
           key={fix.id}
@@ -707,18 +727,18 @@ export const FloorPlanCanvas: React.FC = () => {
               cx={w / 2}
               cy={h / 2}
               r={Math.min(w, h) / 2 - 2}
-              fill={isSelected ? '#f3f4f6' : '#ffffff'}
-              fillOpacity={1.0}
-              stroke={isSelected ? '#c99a6e' : '#111827'}
-              strokeWidth={isSelected ? 2.5 : 1.8}
+              fill={shapeFill}
+              fillOpacity={fixColor ? 0.92 : 1.0}
+              stroke={shapeStroke}
+              strokeWidth={shapeStrokeWidth}
             />
           ) : (
             <polygon
               points={verts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
-              fill={isSelected ? '#f3f4f6' : '#ffffff'}
-              fillOpacity={1.0}
-              stroke={isSelected ? '#c99a6e' : '#111827'}
-              strokeWidth={isSelected ? 2.5 : 1.8}
+              fill={shapeFill}
+              fillOpacity={fixColor ? 0.92 : 1.0}
+              stroke={shapeStroke}
+              strokeWidth={shapeStrokeWidth}
             />
           )}
 
@@ -773,7 +793,10 @@ export const FloorPlanCanvas: React.FC = () => {
             x={w / 2}
             y={h / 2 + 3}
             textAnchor="middle"
-            fill="#111827"
+            fill={fixColor && isDark ? '#ffffff' : '#111827'}
+            stroke={fixColor && isDark ? '#18110e' : '#ffffff'}
+            strokeWidth={0.6}
+            paintOrder="stroke"
             fontSize="10"
             fontWeight="bold"
             fontFamily="sans-serif"
@@ -1193,6 +1216,30 @@ export const FloorPlanCanvas: React.FC = () => {
                   strokeLinejoin="round"
                   className="transition-colors duration-150"
                 />
+              )}
+
+              {/* Optional Room Color Tint Base */}
+              {room.color && (
+                isPoly ? (
+                  <polygon
+                    points={roomVerts.map((v: { x: number; y: number }) => `${v.x * SCALE},${v.y * SCALE}`).join(' ')}
+                    fill={room.color}
+                    fillOpacity={0.2}
+                    className="pointer-events-none"
+                  />
+                ) : (
+                  <rect
+                    x={0}
+                    y={0}
+                    width={w}
+                    height={h}
+                    rx={wallRadiusPx}
+                    ry={wallRadiusPx}
+                    fill={room.color}
+                    fillOpacity={0.2}
+                    className="pointer-events-none"
+                  />
+                )
               )}
 
               {/* Selection Halo */}

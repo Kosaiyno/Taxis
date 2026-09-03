@@ -28,7 +28,7 @@ export const BottomStatusBar: React.FC = () => {
         <span className="text-[#3d302a]">•</span>
         <div className="flex items-center gap-1.5 text-[#c99a6e] bg-[#c99a6e]/15 px-2.5 py-0.5 rounded-full border border-[#c99a6e]/30 shadow-sm">
           <Bot className="w-3 h-3 text-[#c99a6e]" />
-          <span className="font-semibold">26 WebMCP Tools Active</span>
+          <span className="font-semibold">28 WebMCP Tools Active</span>
           <Sparkles className="w-2.5 h-2.5 text-[#c99a6e]" />
         </div>
         <span className="text-[#3d302a]">•</span>

@@ -9,9 +9,23 @@ import {
   Maximize2,
   Sliders,
   Compass,
+  Palette,
 } from 'lucide-react';
 import { useFloorPlanStore } from '../../store/floorplanStore';
 import { SHAPE_GEOMETRIES } from '../../utils/defaultPresets';
+
+const COLOR_PRESETS = [
+  { name: 'Default White', hex: '#ffffff' },
+  { name: 'Espresso Crema', hex: '#c99a6e' },
+  { name: 'Dark Roast', hex: '#261e1b' },
+  { name: 'Emerald', hex: '#10b981' },
+  { name: 'Ocean Blue', hex: '#3b82f6' },
+  { name: 'Amber Gold', hex: '#f59e0b' },
+  { name: 'Coral Rose', hex: '#ef4444' },
+  { name: 'Royal Violet', hex: '#8b5cf6' },
+  { name: 'Teal Mint', hex: '#14b8a6' },
+  { name: 'Slate Gray', hex: '#64748b' },
+];
 
 export const RightPropertiesPanel: React.FC = () => {
   const {
@@ -159,6 +173,54 @@ export const RightPropertiesPanel: React.FC = () => {
               </div>
             </div>
 
+            {/* Color & Material Palette */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] text-[#b08968] font-semibold flex items-center gap-1">
+                  <Palette className="w-3.5 h-3.5 text-[#c99a6e]" />
+                  <span>Color & Material:</span>
+                </label>
+                {selectedFixture.customColor && (
+                  <button
+                    onClick={() => updateFixture(selectedFixture.id, { customColor: undefined })}
+                    className="text-[9px] text-[#8d7b68] hover:text-[#e6ccb2] underline"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {COLOR_PRESETS.map((c) => {
+                  const isActive = (selectedFixture.customColor || '#ffffff').toLowerCase() === c.hex.toLowerCase();
+                  return (
+                    <button
+                      key={c.hex}
+                      onClick={() => updateFixture(selectedFixture.id, { customColor: c.hex === '#ffffff' ? undefined : c.hex })}
+                      className={`w-6 h-6 rounded-full border transition transform hover:scale-110 relative ${
+                        isActive ? 'ring-2 ring-[#c99a6e] scale-110 border-white' : 'border-[#3d302a]'
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                      title={c.name}
+                    >
+                      {isActive && (
+                        <span className={`block w-1.5 h-1.5 rounded-full mx-auto ${c.hex === '#ffffff' || c.hex === '#c99a6e' ? 'bg-[#18110e]' : 'bg-white'}`} />
+                      )}
+                    </button>
+                  );
+                })}
+                {/* Custom Color Input */}
+                <label className="relative w-6 h-6 rounded-full overflow-hidden border border-[#3d302a] cursor-pointer hover:border-[#c99a6e] flex items-center justify-center bg-[#1c1512]" title="Custom Hex Color">
+                  <input
+                    type="color"
+                    value={selectedFixture.customColor || '#ffffff'}
+                    onChange={(e) => updateFixture(selectedFixture.id, { customColor: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <span className="text-[10px] text-[#c99a6e] font-bold">+</span>
+                </label>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-2 border-t border-[#3d302a]">
               <button
@@ -284,6 +346,54 @@ export const RightPropertiesPanel: React.FC = () => {
                   onChange={(e) => updateRoom(selectedRoom.id, { height: parseFloat(e.target.value) || 1 })}
                   className="w-full bg-[#1c1512] border border-[#3d302a] rounded-xl px-2.5 py-1.5 text-xs text-[#f5ebe0] font-mono focus:outline-none focus:border-[#c99a6e]"
                 />
+              </div>
+            </div>
+
+            {/* Zone Tint Color */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] text-[#b08968] font-semibold flex items-center gap-1">
+                  <Palette className="w-3.5 h-3.5 text-[#c99a6e]" />
+                  <span>Zone Tint Color:</span>
+                </label>
+                {selectedRoom.color && (
+                  <button
+                    onClick={() => updateRoom(selectedRoom.id, { color: undefined })}
+                    className="text-[9px] text-[#8d7b68] hover:text-[#e6ccb2] underline"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {COLOR_PRESETS.map((c) => {
+                  const isActive = (selectedRoom.color || '').toLowerCase() === c.hex.toLowerCase();
+                  return (
+                    <button
+                      key={c.hex}
+                      onClick={() => updateRoom(selectedRoom.id, { color: c.hex === '#ffffff' ? undefined : c.hex })}
+                      className={`w-6 h-6 rounded-full border transition transform hover:scale-110 relative ${
+                        isActive ? 'ring-2 ring-[#c99a6e] scale-110 border-white' : 'border-[#3d302a]'
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                      title={c.name}
+                    >
+                      {isActive && (
+                        <span className={`block w-1.5 h-1.5 rounded-full mx-auto ${c.hex === '#ffffff' || c.hex === '#c99a6e' ? 'bg-[#18110e]' : 'bg-white'}`} />
+                      )}
+                    </button>
+                  );
+                })}
+                {/* Custom Color Input */}
+                <label className="relative w-6 h-6 rounded-full overflow-hidden border border-[#3d302a] cursor-pointer hover:border-[#c99a6e] flex items-center justify-center bg-[#1c1512]" title="Custom Zone Color">
+                  <input
+                    type="color"
+                    value={selectedRoom.color || '#ffffff'}
+                    onChange={(e) => updateRoom(selectedRoom.id, { color: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <span className="text-[10px] text-[#c99a6e] font-bold">+</span>
+                </label>
               </div>
             </div>
 

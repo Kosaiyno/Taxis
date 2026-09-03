@@ -123,6 +123,44 @@ export function calculateSmartPlacement(
 }
 
 /**
+ * Resolves color names or hex strings into standard hex codes
+ */
+export function resolveColorInput(c?: string): string {
+  if (!c) return '#ffffff';
+  const clean = c.trim().toLowerCase();
+  const map: Record<string, string> = {
+    white: '#ffffff',
+    gold: '#c99a6e',
+    crema: '#c99a6e',
+    brown: '#8d7b68',
+    espresso: '#261e1b',
+    dark: '#261e1b',
+    black: '#18110e',
+    green: '#10b981',
+    emerald: '#10b981',
+    blue: '#3b82f6',
+    ocean: '#3b82f6',
+    amber: '#f59e0b',
+    orange: '#f59e0b',
+    coral: '#ef4444',
+    red: '#ef4444',
+    rose: '#f43f5e',
+    purple: '#8b5cf6',
+    violet: '#8b5cf6',
+    teal: '#14b8a6',
+    mint: '#14b8a6',
+    slate: '#64748b',
+    charcoal: '#475569',
+    gray: '#64748b',
+    grey: '#64748b',
+    yellow: '#eab308',
+  };
+  if (map[clean]) return map[clean];
+  if (clean.startsWith('#')) return clean;
+  return `#${clean}`;
+}
+
+/**
  * Register all Taxis spatial tools with WebMCP (document.modelContext)
  */
 export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
@@ -547,6 +585,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
           ],
         },
         name: { type: 'string', description: 'Optional custom display label' },
+        color: { type: 'string', description: 'Optional color (hex code e.g. "#10b981" or name e.g. "emerald", "gold", "dark", "blue", "amber", "rose")' },
         x: { type: 'number', description: 'Relative X offset in meters' },
         y: { type: 'number', description: 'Relative Y offset in meters' },
         rotation: { type: 'number', enum: [0, 90, 180, 270] },
@@ -558,6 +597,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
       room_name_or_id: string;
       type: FixtureType;
       name?: string;
+      color?: string;
       x?: number;
       y?: number;
       rotation?: number;
@@ -569,6 +609,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
         roomId: target.id,
         type: input.type,
         name: input.name,
+        customColor: input.color ? resolveColorInput(input.color) : undefined,
         x: input.x ?? 0.8,
         y: input.y ?? 0.8,
         rotation: input.rotation ?? 0,
@@ -746,6 +787,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
         height: { type: 'number', description: 'Length / depth of the shape in meters' },
         x: { type: 'number', description: 'X position on canvas/room in meters' },
         y: { type: 'number', description: 'Y position on canvas/room in meters' },
+        color: { type: 'string', description: 'Optional color (hex code e.g. "#10b981" or name e.g. "emerald", "gold", "dark", "blue", "amber", "rose")' },
         rotation: { type: 'number', enum: [0, 90, 180, 270], description: 'Rotation in degrees' },
         room_name_or_id: { type: 'string', description: 'Optional room/zone name to place inside' },
       },
@@ -757,6 +799,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
       geometry: 'rectangle' | 'circle' | 'l_shape' | 'u_shape' | 't_shape' | 'v_shape';
       width: number;
       height: number;
+      color?: string;
       x?: number;
       y?: number;
       rotation?: number;
@@ -772,6 +815,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
         name: input.name,
         width: input.width,
         height: input.height,
+        customColor: input.color ? resolveColorInput(input.color) : undefined,
         x: input.x !== undefined ? input.x : 2.0,
         y: input.y !== undefined ? input.y : 2.0,
         rotation: input.rotation || 0,
@@ -783,6 +827,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
         shapeId: fixId,
         name: input.name,
         geometry: input.geometry,
+        color: input.color ? resolveColorInput(input.color) : undefined,
         dimensions: `${input.width}m × ${input.height}m`,
         message: `Created ${input.geometry} shape "${input.name}" (${input.width}m × ${input.height}m).`,
       };
@@ -792,12 +837,13 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
   // 20. reshape_object
   const reshapeObjectTool: ModelContextTool = {
     name: 'reshape_object',
-    description: 'Remodels or resizes any object/fixture/shape on the canvas (change geometry, width, depth, rotation, or name).',
+    description: 'Remodels or resizes any object/fixture/shape on the canvas (change geometry, width, depth, rotation, color, or name).',
     inputSchema: {
       type: 'object',
       properties: {
         object_name_or_id: { type: 'string', description: 'Name or ID of the object/shape to remodel' },
         new_name: { type: 'string', description: 'Optional new label/name' },
+        new_color: { type: 'string', description: 'Optional new color (hex e.g. "#10b981" or name e.g. "emerald", "gold", "blue", "dark")' },
         new_geometry: {
           type: 'string',
           enum: ['rectangle', 'circle', 'l_shape', 'u_shape', 't_shape', 'v_shape'],
@@ -813,6 +859,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     execute: async (input: {
       object_name_or_id: string;
       new_name?: string;
+      new_color?: string;
       new_geometry?: any;
       new_width?: number;
       new_height?: number;
@@ -828,6 +875,7 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
 
       const updates: any = {};
       if (input.new_name) updates.name = input.new_name;
+      if (input.new_color !== undefined) updates.customColor = resolveColorInput(input.new_color);
       if (input.new_geometry) updates.geometry = input.new_geometry;
       if (input.new_width) updates.width = input.new_width;
       if (input.new_height) updates.height = input.new_height;
@@ -1079,6 +1127,75 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     },
   };
 
+  // 27. set_object_color
+  const setObjectColorTool: ModelContextTool = {
+    name: 'set_object_color',
+    description:
+      'Assigns a color to any object, shape, booth, or furniture item on the canvas. Accepts hex colors (#10b981, #3b82f6) or color names ("emerald", "gold", "crema", "espresso", "dark", "blue", "amber", "orange", "coral", "red", "rose", "purple", "teal", "mint", "slate", "charcoal", "white").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        object_name_or_id: { type: 'string', description: 'Name or ID of the object/shape/fixture to color' },
+        color: {
+          type: 'string',
+          description:
+            'Hex code (e.g. "#10b981", "#3b82f6") or color name ("emerald", "gold", "blue", "amber", "rose", "dark", "white")',
+        },
+      },
+      required: ['object_name_or_id', 'color'],
+      additionalProperties: false,
+    },
+    execute: async (input: { object_name_or_id: string; color: string }) => {
+      const { fixtures, updateFixture } = useFloorPlanStore.getState();
+      const q = input.object_name_or_id.toLowerCase();
+      const target = fixtures.find((f) => f.id === input.object_name_or_id || f.name.toLowerCase().includes(q));
+      if (!target) {
+        throw new Error(`Object "${input.object_name_or_id}" not found.`);
+      }
+      const hex = resolveColorInput(input.color);
+      updateFixture(target.id, { customColor: hex });
+      return {
+        success: true,
+        objectId: target.id,
+        name: target.name,
+        color: hex,
+        message: `Assigned color ${hex} to object "${target.name}".`,
+      };
+    },
+  };
+
+  // 28. set_room_color
+  const setRoomColorTool: ModelContextTool = {
+    name: 'set_room_color',
+    description:
+      'Assigns a tint color to any room or zone on the canvas. Accepts hex colors (#10b981) or color names ("emerald", "gold", "blue", "amber", "rose", "slate", "white").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        room_name_or_id: { type: 'string', description: 'Name or ID of the room or zone' },
+        color: { type: 'string', description: 'Hex code or color name ("emerald", "blue", "gold", "amber", "rose")' },
+      },
+      required: ['room_name_or_id', 'color'],
+      additionalProperties: false,
+    },
+    execute: async (input: { room_name_or_id: string; color: string }) => {
+      const { rooms, updateRoom } = useFloorPlanStore.getState();
+      const target = findTargetRoom(rooms, input.room_name_or_id);
+      if (!target) {
+        throw new Error(`Room "${input.room_name_or_id}" not found.`);
+      }
+      const hex = resolveColorInput(input.color);
+      updateRoom(target.id, { color: hex });
+      return {
+        success: true,
+        roomId: target.id,
+        name: target.name,
+        color: hex,
+        message: `Assigned tint color ${hex} to room "${target.name}".`,
+      };
+    },
+  };
+
   const allTools = [
     getFloorplanStateTool,
     setPlotDimensionsTool,
@@ -1106,6 +1223,8 @@ export async function registerFloorplanTools(): Promise<RegisteredToolInfo[]> {
     addPolygonVertexTool,
     curveRoomWallsTool,
     remodelRoomWallsTool,
+    setObjectColorTool,
+    setRoomColorTool,
   ];
 
   // 1. Register with browser native document.modelContext
