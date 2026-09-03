@@ -3,7 +3,7 @@
 > You design the space yourself, or let your agent handle the tedious spatial work. Both of you can edit the same plan.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
-[![WebMCP: Active](https://img.shields.io/badge/WebMCP-28%20Spatial%20Tools-success.svg)](src/webmcp/registerFloorplanTools.ts)
+[![WebMCP: Active](https://img.shields.io/badge/WebMCP-63%20Spatial%20Tools-success.svg)](src/webmcp/registerFloorplanTools.ts)
 [![Engine: React 18 + Vite](https://img.shields.io/badge/Built%20With-React%2018%20%2B%20TypeScript-blue.svg)](package.json)
 
 ---
@@ -23,10 +23,9 @@ Whether you are laying out a residential home, an open-concept commercial office
 In Taxis, **anything the agent can do, the human can do — and vice versa**:
 
 1. **📐 Reshape and Remodel Anything**:
-   - Objects and spaces are generic geometric entities: **Rectangle, Circle, L-shape, U-shape, T-shape, V-shape, or Custom Polygon**.
-   - Remodel corner vertices directly on the canvas with smooth drag points, or ask your agent: *"Make this desk an L-shape"* or *"Remodel the booth for Sponsor A into a V-shape"*.
-2. **🔄 Wall Curvature & Corner Remodeling**:
-   - Outer walls are not locked to rigid 90° boxes. Adjust outer wall curvature radius (from sharp corners to smooth curved arcs) or drag individual wall corner points.
+   - Drag corners, convert rectangles into multi-point polygons, curve exterior walls with custom radiuses, or remodel individual vertices directly.
+2. **🎨 Materials and Color Assignment**:
+   - Assign rich architectural materials and tint colors (terracotta, forest sage, warm charcoal, deep navy, champagne amber, rose, espresso) to any zone or object.
 3. **🏷️ Custom Naming Everywhere**:
    - Name and label any space, booth, desk, camera position, or shape to whatever you want. Both the inspector UI and WebMCP tools support custom labels.
 4. **🚪 Flexible 360° Perimeter Openings**:
@@ -52,7 +51,7 @@ Taxis adapts to any physical environment:
 
 ## 🤖 WebMCP Native Implementation
 
-Taxis natively registers **26 structured spatial tools** on the browser's `document.modelContext` adhering directly to the **Web Model Context Protocol (WebMCP)** specification:
+Taxis natively registers **63 structured spatial tools** on the browser's `document.modelContext` adhering directly to the **Web Model Context Protocol (WebMCP)** specification:
 
 ```javascript
 document.modelContext.registerTool({
@@ -81,7 +80,7 @@ document.modelContext.registerTool({
 
 ---
 
-## 🛠️ Complete WebMCP Spatial Tool Suite (59 Tools)
+## 🛠️ Complete WebMCP Spatial Tool Suite (63 Tools)
 
 ### 1. Architectural Validation & Connectivity
 | Tool | Description |
@@ -157,6 +156,14 @@ document.modelContext.registerTool({
 | `export_project` | Exports vector SVG blueprint markup or JSON data state |
 | `save_project` | Returns verified JSON state snapshot with timestamp |
 | `render_plan_snapshot` | Returns instant standalone SVG vector blueprint markup string |
+
+### 6. Projects Library & Named Layouts
+| Tool | Description |
+| :--- | :--- |
+| `save_project_as` | Saves the current floor plan layout to the project library with a custom name and optional notes |
+| `list_saved_projects` | Lists all saved floor plan layouts stored in the project library |
+| `load_saved_project` | Loads a previously saved floor plan layout from the library onto the active canvas |
+| `delete_saved_project` | Deletes a saved layout from the project library |
 
 ---
 
